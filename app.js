@@ -779,6 +779,43 @@ async function loadCollectionNfts(collection, append = false) {
         return;
     }
     
+    // Fetch active listings to show prices/badges
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    
+    let listingData = {};
+    try {
+        const activeTokenIds = await marketplace.getActiveListings(collection.address);
+        // Get prices for listed items
+        const listingResults = await Promise.all(activeTokenIds.map(async (tokenId) => {
+            try {
+                const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+                if (active) {
+                    const id = tokenId.toNumber ? tokenId.toNumber() : Number(tokenId);
+                    let sortPrice = 0;
+                    if (priceSGB.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(priceSGB));
+                    else if (pricePOND.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(pricePOND)) / 1000;
+                    
+                    let priceText = '';
+                    if (priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(priceSGB)).toFixed(2) + ' SGB';
+                    if (pricePOND.gt(0)) {
+                        if (priceText) priceText += ' / ';
+                        priceText += formatNumber(parseFloat(ethers.utils.formatEther(pricePOND))) + ' POND';
+                    }
+                    
+                    return { id, sortPrice, priceText };
+                }
+            } catch {}
+            return null;
+        }));
+        
+        listingResults.filter(Boolean).forEach(l => {
+            listingData[l.id] = l;
+        });
+    } catch (err) {
+        console.log('Could not fetch listings:', err.message);
+    }
+    
     const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
     const pageSize = 100;
     const tokenIds = allTokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
@@ -791,18 +828,25 @@ async function loadCollectionNfts(collection, append = false) {
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
         
+        const listing = listingData[tokenId];
+        card.dataset.price = listing ? listing.sortPrice : 0;
+        
         let imageUrl = collection.thumbnailUri 
             ? collection.thumbnailUri + tokenId + '.png'
             : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+        
+        const listedBadge = listing ? '<div class="listed-badge">LISTED</div>' : '';
+        const priceDisplay = listing ? `<div class="nft-price">${listing.priceText}</div>` : '';
         
         card.innerHTML = `
             <div class="nft-image">
                 <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
                      onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+                ${listedBadge}
             </div>
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
-                <div class="nft-collection">${collection.symbol}</div>
+                ${priceDisplay || `<div class="nft-collection">${collection.symbol}</div>`}
             </div>
         `;
         
@@ -834,7 +878,9 @@ async function loadListedNfts(collection, grid) {
     }
     
     // Use new getActiveListings - instant!
+    console.log('Fetching active listings for', collection.name, collection.address);
     const tokenIds = await marketplace.getActiveListings(collection.address);
+    console.log('Active listing token IDs:', tokenIds.map(t => t.toString()));
     
     if (tokenIds.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
