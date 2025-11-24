@@ -255,30 +255,42 @@ function createCollectionCard(collection) {
 
 // Load floor prices for all collections
 async function loadCollectionFloors() {
-    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return;
+    console.log('Loading collection floors...');
+    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') {
+        console.log('Marketplace not set');
+        return;
+    }
     
     // Use read-only provider if wallet not connected
     const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
     
+    // Load total staked first (separate from marketplace)
+    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
+        try {
+            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+            const totalStaked = await stakingContract.totalStakedNFTs();
+            console.log('Total staked:', totalStaked.toString());
+            document.getElementById('totalStaked').textContent = formatNumber(totalStaked.toNumber());
+        } catch (err) {
+            console.error('Error loading total staked:', err);
+        }
+    }
+    
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
-    const currentBlock = await readProvider.getBlockNumber();
-    const fromBlock = Math.max(0, currentBlock - 500000);
     
     // Load overall volume stats
     try {
         const [volumeSGB, volumePOND, sales] = await marketplace.getStats();
         const totalVolume = parseFloat(ethers.utils.formatEther(volumeSGB));
+        console.log('Total volume:', totalVolume);
         document.getElementById('totalVolume').textContent = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
-    } catch {}
-    
-    // Load total staked
-    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
-        try {
-            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
-            const totalStaked = await stakingContract.totalStakedNFTs();
-            document.getElementById('totalStaked').textContent = formatNumber(totalStaked.toNumber());
-        } catch {}
+    } catch (err) {
+        console.error('Error loading volume:', err);
     }
+    
+    const currentBlock = await readProvider.getBlockNumber();
+    const fromBlock = Math.max(0, currentBlock - 500000);
+    console.log('Searching from block', fromBlock, 'to', currentBlock);
     
     // Load floor for each collection in parallel
     await Promise.all(COLLECTIONS.map(async (col) => {
@@ -294,7 +306,11 @@ async function loadCollectionFloors() {
                 toBlock: 'latest'
             });
             
+            console.log(`${col.name}: found ${logs.length} listing events`);
+            
             const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
+            
+            if (tokenIds.length === 0) return;
             
             // Check active listings in parallel
             const results = await Promise.all(tokenIds.slice(0, 50).map(async (tokenId) => {
@@ -308,15 +324,20 @@ async function loadCollectionFloors() {
             }));
             
             const prices = results.filter(p => p !== null);
+            console.log(`${col.name}: ${prices.length} active listings, prices:`, prices);
+            
             if (prices.length > 0) {
                 const floor = Math.min(...prices);
                 const floorEl = document.querySelector(`.floor-price[data-collection="${col.address}"]`);
+                console.log(`${col.name}: floor = ${floor}, element found:`, !!floorEl);
                 if (floorEl) floorEl.textContent = floor.toFixed(1) + ' SGB';
             }
         } catch (err) {
-            console.error(`Error loading floor for ${col.name}:`, err.message);
+            console.error(`Error loading floor for ${col.name}:`, err);
         }
     }));
+    
+    console.log('Floor loading complete');
 }
 
 async function loadUserNfts() {
