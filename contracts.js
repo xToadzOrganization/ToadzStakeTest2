@@ -16,10 +16,10 @@ const CONTRACTS = {
     luxuryLofts: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8',
     songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
     
-    // NFT Staking Contract (TODO: deploy)
+    // NFT Staking Contract (TODO: update after deployment)
     nftStaking: '0x0000000000000000000000000000000000000000',
     
-    // Marketplace Contract (TODO: deploy or use existing)
+    // Marketplace Contract (TODO: deploy)
     marketplace: '0x0000000000000000000000000000000000000000'
 };
 
@@ -30,11 +30,10 @@ const COLLECTIONS = [
         name: 'sToadz',
         symbol: 'STOADZ',
         supply: 10000,
-        description: 'The original toad collection on Songbird. Stake for 10% LP multiplier per NFT.',
+        description: 'The original toad collection on Songbird. Stake for POND rewards + LP boost.',
         image: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/1.png',
         baseUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
-        multiplier: 10,
         featured: true,
         jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
     },
@@ -43,10 +42,9 @@ const COLLECTIONS = [
         name: 'Luxury Lofts',
         symbol: 'LOFT',
         supply: 10000,
-        description: 'Premium real estate on Songbird. Stake for 5% LP multiplier per NFT.',
+        description: 'Premium real estate on Songbird. Stake for POND rewards + LP boost.',
         image: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg',
         baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
-        multiplier: 5,
         featured: true,
         jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
     },
@@ -55,10 +53,9 @@ const COLLECTIONS = [
         name: 'Songbird City',
         symbol: 'SBCITY',
         supply: 10000,
-        description: 'Urban NFTs on Songbird Network. Stake for 5% LP multiplier per NFT.',
+        description: 'Urban NFTs on Songbird Network. Stake for POND rewards + LP boost.',
         image: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
-        multiplier: 5,
         featured: true,
         jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
     }
@@ -101,16 +98,21 @@ const PONDPOOL_ABI = [
     'function swapPondForSgb(uint256 pondAmount) returns (uint256)'
 ];
 
-// NFT Staking ABI (placeholder - update when contract deployed)
+// NFT Staking ABI
 const NFT_STAKING_ABI = [
-    'function stake(address collection, uint256[] tokenIds)',
-    'function unstake(address collection, uint256[] tokenIds)',
-    'function stakeAll(address collection)',
-    'function unstakeAll(address collection)',
-    'function getStakedTokens(address user, address collection) view returns (uint256[])',
-    'function getMultiplier(address user) view returns (uint256)',
+    'function stake(address collection, uint256 tokenId)',
+    'function stakeBatch(address collection, uint256[] tokenIds)',
+    'function unstake(address collection, uint256 tokenId)',
+    'function unstakeBatch(address collection, uint256[] tokenIds)',
+    'function unstakeAll()',
     'function claimRewards()',
-    'function pendingRewards(address user) view returns (uint256)'
+    'function getStakedNFTCount(address user) view returns (uint256)',
+    'function getStakedTokens(address user, address collection) view returns (uint256[])',
+    'function pendingRewards(address user) view returns (uint256)',
+    'function getUserStats(address user) view returns (uint256 totalStaked, uint256 stakedSToadz, uint256 stakedLofts, uint256 stakedCity, uint256 pendingPond)',
+    'function getGlobalStats() view returns (uint256 totalNFTsStaked, uint256 dailyReward, uint256 rewardPerNFTPerDay, uint256 contractPondBalance)',
+    'function totalStakedNFTs() view returns (uint256)',
+    'function dailyRewardAmount() view returns (uint256)'
 ];
 
 // Marketplace ABI (placeholder - update when contract deployed)
