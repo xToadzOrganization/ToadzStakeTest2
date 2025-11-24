@@ -193,6 +193,7 @@ async function loadBalances() {
 async function loadCollections() {
     const grid = document.getElementById('collectionsGrid');
     grid.innerHTML = '';
+    grid.style.display = ''; // Reset to CSS default (grid)
     
     for (const col of COLLECTIONS) {
         const card = createCollectionCard(col);
@@ -268,7 +269,7 @@ async function loadUserNfts() {
                     await contract.tokenOfOwnerByIndex(userAddress, 0);
                 } catch {
                     useEnumerable = false;
-                    console.log(`${col.name}: Not enumerable, using fallback`);
+                    console.log(`${col.name}: Not enumerable, using Transfer event fallback`);
                 }
                 
                 if (useEnumerable) {
@@ -287,17 +288,37 @@ async function loadUserNfts() {
                         }
                     }
                 } else {
-                    // Fallback: Use cached JSON metadata and check ownership
-                    const metadata = collectionMetadata[col.address];
-                    console.log(`${col.name}: Metadata loaded:`, !!metadata, metadata ? Object.keys(metadata).length : 0, 'tokens');
-                    if (metadata) {
-                        // Sample check - check ownership of tokens from metadata
-                        const tokenIds = Object.keys(metadata).slice(0, Math.min(1000, count * 2));
-                        let found = 0;
+                    // Fallback: Use Transfer event logs to find user's tokens
+                    try {
+                        // Get Transfer events where user is recipient
+                        const transferFilter = {
+                            address: col.address,
+                            topics: [
+                                ethers.utils.id('Transfer(address,address,uint256)'),
+                                null, // from (any)
+                                ethers.utils.hexZeroPad(userAddress, 32) // to (user)
+                            ],
+                            fromBlock: 0,
+                            toBlock: 'latest'
+                        };
                         
-                        for (const tokenIdStr of tokenIds) {
+                        console.log(`${col.name}: Fetching Transfer events...`);
+                        const logs = await provider.getLogs(transferFilter);
+                        console.log(`${col.name}: Found ${logs.length} incoming transfers`);
+                        
+                        // Get unique token IDs from logs
+                        const potentialTokens = new Set();
+                        for (const log of logs) {
+                            const tokenId = parseInt(log.topics[3], 16);
+                            potentialTokens.add(tokenId);
+                        }
+                        
+                        console.log(`${col.name}: Checking ${potentialTokens.size} potential tokens...`);
+                        
+                        // Check current ownership
+                        let found = 0;
+                        for (const tokenId of potentialTokens) {
                             if (found >= count) break;
-                            const tokenId = parseInt(tokenIdStr);
                             try {
                                 const owner = await contract.ownerOf(tokenId);
                                 if (owner.toLowerCase() === userAddress.toLowerCase()) {
@@ -310,7 +331,30 @@ async function loadUserNfts() {
                                     console.log(`Found owned NFT: ${col.name} #${tokenId}`);
                                 }
                             } catch {
-                                // Token doesn't exist or error
+                                // Token might be burned or error
+                            }
+                        }
+                    } catch (eventErr) {
+                        console.log(`${col.name}: Event log query failed, trying metadata fallback...`);
+                        // Final fallback: check tokens from metadata
+                        const metadata = collectionMetadata[col.address];
+                        if (metadata) {
+                            const tokenIds = Object.keys(metadata);
+                            let found = 0;
+                            for (const tokenIdStr of tokenIds) {
+                                if (found >= count) break;
+                                const tokenId = parseInt(tokenIdStr);
+                                try {
+                                    const owner = await contract.ownerOf(tokenId);
+                                    if (owner.toLowerCase() === userAddress.toLowerCase()) {
+                                        userNfts[col.address].push(tokenId);
+                                        allNfts.push({
+                                            collection: col,
+                                            tokenId: tokenId
+                                        });
+                                        found++;
+                                    }
+                                } catch {}
                             }
                         }
                     }
@@ -406,37 +450,27 @@ function createNftCard(collection, tokenId, isStaked) {
     const card = document.createElement('div');
     card.className = 'nft-card';
     
-    // Get image URL
+    // Use thumbnail URI if available (PNG), otherwise use art from metadata
     let imageUrl;
-    const metadata = collectionMetadata[collection.address];
-    if (metadata && metadata[tokenId]) {
-        imageUrl = metadata[tokenId].art || metadata[tokenId].image;
-    }
-    if (!imageUrl) {
-        // Fallback to baseUri
-        if (collection.baseUri.includes('ipfs://')) {
-            imageUrl = collection.baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/') + tokenId + '.png';
-        } else if (collection.baseUri.endsWith('/')) {
-            imageUrl = collection.baseUri + tokenId + '.png';
-        } else {
-            imageUrl = collection.baseUri;
-        }
-    }
-    
-    // Check if it's a video
-    const isVideo = imageUrl && (imageUrl.endsWith('.mp4') || imageUrl.endsWith('.webm'));
-    
-    let mediaHtml;
-    if (isVideo) {
-        mediaHtml = `<video src="${imageUrl}" autoplay loop muted playsinline></video>`;
+    if (collection.thumbnailUri) {
+        // Use fast PNG thumbnails
+        imageUrl = collection.thumbnailUri + tokenId + '.png';
     } else {
-        mediaHtml = `<img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
-             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">`;
+        // Get from metadata
+        const metadata = collectionMetadata[collection.address];
+        if (metadata && metadata[tokenId]) {
+            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+        }
+        if (!imageUrl) {
+            // Fallback to baseUri
+            imageUrl = collection.baseUri + tokenId + '.png';
+        }
     }
     
     card.innerHTML = `
         <div class="nft-image">
-            ${mediaHtml}
+            <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
             ${isStaked ? '<div class="staked-badge">STAKED</div>' : ''}
         </div>
         <div class="nft-info">
@@ -477,6 +511,9 @@ function openCollectionView(collection) {
     currentCollectionView = collection;
     
     const grid = document.getElementById('collectionsGrid');
+    
+    // Change parent to block display for proper layout
+    grid.style.display = 'block';
     
     // Create collection detail view
     grid.innerHTML = `
@@ -552,20 +589,18 @@ async function loadCollectionNfts(collection) {
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
         
-        const imageUrl = nftData.art || nftData.image || collection.baseUri + tokenId + '.png';
-        const isVideo = imageUrl && (imageUrl.endsWith('.mp4') || imageUrl.endsWith('.webm'));
-        
-        let mediaHtml;
-        if (isVideo) {
-            mediaHtml = `<video src="${imageUrl}" autoplay loop muted playsinline></video>`;
+        // Use thumbnail URI if available (PNG), otherwise use art from metadata
+        let imageUrl;
+        if (collection.thumbnailUri) {
+            imageUrl = collection.thumbnailUri + tokenId + '.png';
         } else {
-            mediaHtml = `<img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
-                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">`;
+            imageUrl = nftData.art || nftData.image || collection.baseUri + tokenId + '.png';
         }
         
         card.innerHTML = `
             <div class="nft-image">
-                ${mediaHtml}
+                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
             </div>
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
