@@ -402,6 +402,7 @@ async function loadWalletNfts() {
         
         try {
             const balance = await contract.balanceOf(userAddress);
+            console.log(`${col.name}: balance = ${balance.toString()}`);
             if (balance.eq(0)) return nfts;
             
             // Try enumerable - parallel fetch all at once
@@ -417,30 +418,55 @@ async function loadWalletNfts() {
                         nfts.push({ collection: col, tokenId: id });
                     }
                 }
-            } catch {
-                // Not enumerable - use transfer events
-                const logs = await provider.getLogs({
-                    address: col.address,
-                    topics: [
-                        ethers.utils.id('Transfer(address,address,uint256)'),
-                        null,
-                        ethers.utils.hexZeroPad(userAddress, 32)
-                    ],
-                    fromBlock: 0,
-                    toBlock: 'latest'
+                console.log(`${col.name}: found ${nfts.length} via enumerable`);
+            } catch (enumErr) {
+                console.log(`${col.name}: not enumerable, using chunked transfer events`);
+                // Not enumerable - use chunked transfer events
+                const currentBlock = await provider.getBlockNumber();
+                const chunkSize = 5000;
+                const chunksToScan = 20;
+                const potentialTokens = new Set();
+                
+                const chunkPromises = [];
+                for (let i = 0; i < chunksToScan; i++) {
+                    const endBlock = currentBlock - (i * chunkSize);
+                    const startBlock = Math.max(0, endBlock - chunkSize);
+                    if (startBlock <= 0) break;
+                    
+                    chunkPromises.push(
+                        provider.getLogs({
+                            address: col.address,
+                            topics: [
+                                ethers.utils.id('Transfer(address,address,uint256)'),
+                                null,
+                                ethers.utils.hexZeroPad(userAddress, 32)
+                            ],
+                            fromBlock: startBlock,
+                            toBlock: endBlock
+                        }).catch(() => [])
+                    );
+                }
+                
+                const chunkResults = await Promise.all(chunkPromises);
+                chunkResults.forEach(logs => {
+                    logs.forEach(l => potentialTokens.add(parseInt(l.topics[3], 16)));
                 });
                 
-                const potentialTokens = [...new Set(logs.map(l => parseInt(l.topics[3], 16)))];
+                console.log(`${col.name}: found ${potentialTokens.size} potential tokens from events`);
+                
+                // Check ownership in parallel
+                const tokenArray = [...potentialTokens];
                 const owners = await Promise.all(
-                    potentialTokens.map(id => contract.ownerOf(id).catch(() => null))
+                    tokenArray.map(id => contract.ownerOf(id).catch(() => null))
                 );
                 
-                potentialTokens.forEach((tokenId, i) => {
+                tokenArray.forEach((tokenId, i) => {
                     if (owners[i] && owners[i].toLowerCase() === userAddress.toLowerCase()) {
                         userNfts[col.address].push(tokenId);
                         nfts.push({ collection: col, tokenId });
                     }
                 });
+                console.log(`${col.name}: confirmed ${nfts.length} owned`);
             }
         } catch (err) {
             console.error(`Error loading ${col.name}:`, err.message);
@@ -479,26 +505,41 @@ async function loadListedNftsForUser() {
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
     
     try {
-        // Get listing events for user
-        const logs = await provider.getLogs({
-            address: CONTRACTS.marketplace,
-            topics: [
-                ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                null, null,
-                ethers.utils.hexZeroPad(userAddress, 32)
-            ],
-            fromBlock: 0,
-            toBlock: 'latest'
-        });
-        
-        // Get unique collection+tokenId pairs
+        // Get listing events for user using chunked scanning
+        const currentBlock = await provider.getBlockNumber();
+        const chunkSize = 5000;
+        const chunksToScan = 20;
         const uniqueListings = new Map();
-        for (const log of logs) {
-            const collectionAddress = '0x' + log.topics[1].slice(26);
-            const tokenId = parseInt(log.topics[2], 16);
-            const key = `${collectionAddress.toLowerCase()}-${tokenId}`;
-            uniqueListings.set(key, { collectionAddress, tokenId });
+        
+        const chunkPromises = [];
+        for (let i = 0; i < chunksToScan; i++) {
+            const endBlock = currentBlock - (i * chunkSize);
+            const startBlock = Math.max(0, endBlock - chunkSize);
+            if (startBlock <= 0) break;
+            
+            chunkPromises.push(
+                provider.getLogs({
+                    address: CONTRACTS.marketplace,
+                    topics: [
+                        ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                        null, null,
+                        ethers.utils.hexZeroPad(userAddress, 32)
+                    ],
+                    fromBlock: startBlock,
+                    toBlock: endBlock
+                }).catch(() => [])
+            );
         }
+        
+        const chunkResults = await Promise.all(chunkPromises);
+        chunkResults.forEach(logs => {
+            logs.forEach(log => {
+                const collectionAddress = '0x' + log.topics[1].slice(26);
+                const tokenId = parseInt(log.topics[2], 16);
+                const key = `${collectionAddress.toLowerCase()}-${tokenId}`;
+                uniqueListings.set(key, { collectionAddress, tokenId });
+            });
+        });
         
         // Check all unique listings in parallel
         const listingChecks = [...uniqueListings.values()].map(async ({ collectionAddress, tokenId }) => {
