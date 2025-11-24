@@ -289,7 +289,8 @@ async function loadCollectionFloors() {
     }
     
     const currentBlock = await readProvider.getBlockNumber();
-    const fromBlock = Math.max(0, currentBlock - 500000);
+    // RPC limits to 30k blocks, use 25k to be safe
+    const fromBlock = Math.max(0, currentBlock - 25000);
     console.log('Searching from block', fromBlock, 'to', currentBlock);
     
     // Load floor for each collection in parallel
@@ -829,7 +830,7 @@ async function loadListedNfts(collection, grid) {
     
     // Get all Listed events for this collection (recent blocks for speed)
     const currentBlock = await provider.getBlockNumber();
-    const fromBlock = Math.max(0, currentBlock - 500000); // Last ~500k blocks
+    const fromBlock = Math.max(0, currentBlock - 25000); // RPC limit is 30k blocks
     
     const logs = await provider.getLogs({
         address: CONTRACTS.marketplace,
