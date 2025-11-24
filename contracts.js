@@ -20,7 +20,7 @@ const CONTRACTS = {
     nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
     
     // Marketplace Contract
-    marketplace: '0x0d528f610F01C6811B7E5f782C21FB2B10A5bd92'
+    marketplace: '0xdbe9716BDc4444c73a03C7A01fe5B7943d6936D4'
 };
 
 // ==================== COLLECTION METADATA ====================
@@ -117,18 +117,17 @@ const NFT_STAKING_ABI = [
 
 // Marketplace ABI
 const MARKETPLACE_ABI = [
-    'function listNFT(address collection, uint256 tokenId, uint256 priceSGB, uint256 pricePOND)',
-    'function cancelListing(address collection, uint256 tokenId)',
+    'function list(address collection, uint256 tokenId, uint256 priceSGB, uint256 pricePOND)',
+    'function unlist(address collection, uint256 tokenId)',
     'function updateListing(address collection, uint256 tokenId, uint256 newPriceSGB, uint256 newPricePOND)',
     'function buyWithSGB(address collection, uint256 tokenId) payable',
     'function buyWithPOND(address collection, uint256 tokenId)',
-    'function makeOfferSGB(address collection, uint256 tokenId) payable',
-    'function makeOfferPOND(address collection, uint256 tokenId, uint256 amount)',
+    'function makeOffer(address collection, uint256 tokenId, uint256 amountPOND, uint256 duration) payable',
     'function cancelOffer(address collection, uint256 tokenId, uint256 offerIndex)',
     'function acceptOffer(address collection, uint256 tokenId, uint256 offerIndex)',
     'function getListing(address collection, uint256 tokenId) view returns (address seller, uint256 priceSGB, uint256 pricePOND, bool active)',
-    'function getOffers(address collection, uint256 tokenId) view returns (tuple(address offerer, uint256 amount, bool isPOND, uint256 timestamp)[])',
-    'function getOfferCount(address collection, uint256 tokenId) view returns (uint256)',
-    'function getStats() view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales, uint256 pendingFeesSGB, uint256 pendingFeesPOND)',
-    'function distributeFees()'
+    'function getOffers(address collection, uint256 tokenId) view returns (tuple(address buyer, uint256 amountSGB, uint256 amountPOND, uint256 expiry)[])',
+    'function getStats() view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales)',
+    'function getActiveListings(address collection) view returns (uint256[])',
+    'function getActiveListingCount(address collection) view returns (uint256)'
 ];
