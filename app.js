@@ -1,1005 +1,319 @@
-// ==================== STATE ====================
-let provider = null;
-let signer = null;
-let userAddress = null;
-let isConnected = false;
-let currentTab = 'collections';
-let userNfts = {};
-let stakedNfts = {};
-let collectionMetadata = {}; // Cache for JSON metadata
-let currentCollectionView = null;
-
-// ==================== INIT ====================
-document.addEventListener('DOMContentLoaded', init);
-
-async function init() {
-    setupEventListeners();
-    await loadCollectionMetadata();
-    await loadCollections();
-    
-    // Check if already connected
-    if (window.ethereum && window.ethereum.selectedAddress) {
-        await connectWallet();
-    }
-}
-
-// ==================== LOAD METADATA ====================
-async function loadCollectionMetadata() {
-    for (const col of COLLECTIONS) {
-        if (col.jsonFile) {
-            try {
-                const response = await fetch(col.jsonFile);
-                if (response.ok) {
-                    let data = await response.json();
-                    
-                    // Convert array format to object format if needed
-                    if (Array.isArray(data)) {
-                        const obj = {};
-                        for (const item of data) {
-                            obj[item.id] = item;
-                        }
-                        data = obj;
-                    }
-                    
-                    collectionMetadata[col.address] = data;
-                }
-            } catch (err) {
-                console.log(`Could not load metadata for ${col.name}:`, err.message);
-            }
-        }
-    }
-}
-
-// ==================== EVENT LISTENERS ====================
-function setupEventListeners() {
-    // Connect button
-    document.getElementById('connectBtn').addEventListener('click', connectWallet);
-    
-    // Tab navigation
-    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-    
-    // Modal close
-    document.getElementById('modalClose').addEventListener('click', closeModal);
-    document.getElementById('nftModal').addEventListener('click', (e) => {
-        if (e.target.id === 'nftModal') closeModal();
-    });
-    
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            filterCollections(btn.dataset.filter);
-        });
-    });
-    
-    // Sort dropdown
-    document.getElementById('sortCollections').addEventListener('change', (e) => {
-        sortCollections(e.target.value);
-    });
-    
-    // Staking actions
-    document.getElementById('stakeAllBtn')?.addEventListener('click', stakeAllNfts);
-    document.getElementById('unstakeAllBtn')?.addEventListener('click', unstakeAllNfts);
-    document.getElementById('claimStakeRewardsBtn')?.addEventListener('click', claimStakingRewards);
-}
-
-// ==================== WALLET ====================
-async function connectWallet() {
-    if (!window.ethereum) {
-        showToast('Please install MetaMask', 'error');
-        return;
-    }
-    
-    try {
-        const btn = document.getElementById('connectBtn');
-        btn.textContent = 'Connecting...';
-        
-        // Request accounts
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        userAddress = accounts[0];
-        
-        // Check network
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (parseInt(chainId, 16) !== SONGBIRD_CHAIN_ID) {
-            await switchToSongbird();
-        }
-        
-        // Setup provider
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        signer = provider.getSigner();
-        isConnected = true;
-        
-        // Update UI
-        btn.textContent = formatAddress(userAddress);
-        btn.classList.add('connected');
-        
-        // Load user data
-        await Promise.all([
-            loadBalances(),
-            loadUserNfts(),
-            loadStakedNfts(),
-            loadLpPosition()
-        ]);
-        
-        // Listen for account changes
-        window.ethereum.on('accountsChanged', handleAccountChange);
-        window.ethereum.on('chainChanged', () => window.location.reload());
-        
-        showToast('Wallet connected');
-        
-    } catch (err) {
-        console.error('Connect failed:', err);
-        showToast('Failed to connect wallet', 'error');
-        document.getElementById('connectBtn').textContent = 'Connect Wallet';
-    }
-}
-
-async function switchToSongbird() {
-    try {
-        await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x13' }]
-        });
-    } catch (err) {
-        if (err.code === 4902) {
-            await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                    chainId: '0x13',
-                    chainName: 'Songbird',
-                    nativeCurrency: { name: 'SGB', symbol: 'SGB', decimals: 18 },
-                    rpcUrls: [SONGBIRD_RPC],
-                    blockExplorerUrls: ['https://songbird-explorer.flare.network']
-                }]
-            });
-        }
-    }
-}
-
-function handleAccountChange(accounts) {
-    if (accounts.length === 0) {
-        isConnected = false;
-        userAddress = null;
-        document.getElementById('connectBtn').textContent = 'Connect Wallet';
-        document.getElementById('connectBtn').classList.remove('connected');
-    } else {
-        userAddress = accounts[0];
-        document.getElementById('connectBtn').textContent = formatAddress(userAddress);
-        loadBalances();
-        loadUserNfts();
-    }
-}
-
-// ==================== LOAD DATA ====================
-async function loadBalances() {
-    if (!isConnected) return;
-    
-    try {
-        const [sgbBal, pondBal] = await Promise.all([
-            provider.getBalance(userAddress),
-            new ethers.Contract(CONTRACTS.pondToken, ERC20_ABI, provider).balanceOf(userAddress)
-        ]);
-        
-        document.getElementById('sgbBal').textContent = parseFloat(ethers.utils.formatEther(sgbBal)).toFixed(2);
-        document.getElementById('pondBal').textContent = formatNumber(parseFloat(ethers.utils.formatEther(pondBal)));
-    } catch (err) {
-        console.error('Load balances failed:', err);
-    }
-}
-
-async function loadCollections() {
-    const grid = document.getElementById('collectionsGrid');
-    grid.innerHTML = '';
-    grid.style.display = ''; // Reset to CSS default (grid)
-    
-    for (const col of COLLECTIONS) {
-        const card = createCollectionCard(col);
-        grid.appendChild(card);
-    }
-}
-
-function createCollectionCard(collection) {
-    const card = document.createElement('div');
-    card.className = 'collection-card';
-    card.style.cursor = 'pointer';
-    
-    card.innerHTML = `
-        <div class="collection-banner">
-            <img src="${collection.image}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toadz Marketplace | Zero-Fee NFT Trading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/" class="logo">TOADZ</a>
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="collections">Collections</button>
+                <button class="nav-btn" data-tab="my-nfts">My NFTs</button>
+                <button class="nav-btn" data-tab="staking">Staking</button>
+                <button class="nav-btn" data-tab="lp">LP</button>
+                <button class="nav-btn" data-tab="governance">Governance</button>
+            </nav>
         </div>
-        <div class="collection-info">
-            <div class="collection-name">${collection.name}</div>
-            <div class="collection-desc">${collection.description}</div>
-            <div class="collection-stats">
-                <div class="col-stat">
-                    <span class="col-stat-value">${formatNumber(collection.supply)}</span>
-                    <span class="col-stat-label">Items</span>
+        <div class="header-right">
+            <div class="balances" id="balances">
+                <div class="balance-item">
+                    <span class="balance-value" id="sgbBal">0.00</span>
+                    <span class="balance-label">SGB</span>
                 </div>
-                <div class="col-stat">
-                    <span class="col-stat-value">--</span>
-                    <span class="col-stat-label">Floor</span>
-                </div>
-                <div class="col-stat">
-                    <span class="col-stat-value">--</span>
-                    <span class="col-stat-label">Volume</span>
+                <div class="balance-item">
+                    <span class="balance-value" id="pondBal">0.00</span>
+                    <span class="balance-label">POND</span>
                 </div>
             </div>
-            <div class="multiplier-badge">🔥 LP Boost Eligible</div>
+            <button class="connect-btn" id="connectBtn">Connect Wallet</button>
+            <button class="notification-btn" id="notifBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-badge" id="notifBadge">0</span>
+            </button>
         </div>
-    `;
-    
-    // Click handler to open collection view
-    card.addEventListener('click', () => openCollectionView(collection));
-    
-    return card;
-}
+    </header>
 
-async function loadUserNfts() {
-    if (!isConnected) {
-        document.getElementById('noNftsMsg').innerHTML = '<p>Connect wallet to view your NFTs</p>';
-        return;
-    }
-    
-    const grid = document.getElementById('myNftsGrid');
-    grid.innerHTML = '<div class="empty-state"><p>Loading NFTs...</p></div>';
-    
-    userNfts = {};
-    let allNfts = [];
-    
-    console.log('Loading NFTs for wallet:', userAddress);
-    
-    for (const col of COLLECTIONS) {
-        try {
-            console.log(`Checking ${col.name}...`);
-            const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
-            const balance = await contract.balanceOf(userAddress);
-            const count = balance.toNumber();
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav">
+        <button class="mobile-nav-btn active" data-tab="collections">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span>Collections</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="my-nfts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>My NFTs</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="staking">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+            <span>Staking</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="lp">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>
+            <span>LP</span>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Collections Tab -->
+        <div class="tab-content active" id="tab-collections">
+            <!-- Featured Banner -->
+            <div class="featured-banner">
+                <div class="featured-text">
+                    <h1>Zero-Fee NFT Trading</h1>
+                    <p>Stake NFTs for LP multipliers. All fees flow to stakers.</p>
+                </div>
+                <div class="featured-stats">
+                    <div class="feat-stat">
+                        <span class="feat-value" id="totalVolume">0</span>
+                        <span class="feat-label">Total Volume</span>
+                    </div>
+                    <div class="feat-stat">
+                        <span class="feat-value" id="totalNfts">30,000</span>
+                        <span class="feat-label">NFTs</span>
+                    </div>
+                    <div class="feat-stat">
+                        <span class="feat-value" id="totalStaked">0</span>
+                        <span class="feat-label">Staked</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collection Filters -->
+            <div class="filters">
+                <div class="filter-tabs">
+                    <button class="filter-btn active" data-filter="featured">Featured</button>
+                    <button class="filter-btn" data-filter="all">All Collections</button>
+                </div>
+                <div class="sort-dropdown">
+                    <select id="sortCollections">
+                        <option value="volume">Volume</option>
+                        <option value="floor">Floor Price</option>
+                        <option value="name">Name</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Collections Grid -->
+            <div class="collections-grid" id="collectionsGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- My NFTs Tab -->
+        <div class="tab-content" id="tab-my-nfts">
+            <div class="my-nfts-header">
+                <h2>My NFTs</h2>
+                <div class="my-nfts-actions">
+                    <button class="action-btn" id="stakeAllBtn">Stake All</button>
+                </div>
+            </div>
+            <div class="my-nfts-grid" id="myNftsGrid">
+                <div class="empty-state" id="noNftsMsg">
+                    <p>Connect wallet to view your NFTs</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staking Tab -->
+        <div class="tab-content" id="tab-staking">
+            <div class="staking-header">
+                <h2>NFT Staking</h2>
+                <p class="staking-sub">Stake NFTs to earn daily POND rewards + boost your LP position.</p>
+            </div>
             
-            console.log(`${col.name}: balance = ${count}`);
-            
-            userNfts[col.address] = [];
-            
-            if (count > 0) {
-                // Try enumerable method first
-                let useEnumerable = true;
-                try {
-                    await contract.tokenOfOwnerByIndex(userAddress, 0);
-                } catch {
-                    useEnumerable = false;
-                    console.log(`${col.name}: Not enumerable, using Transfer event fallback`);
-                }
+            <div class="staking-stats">
+                <div class="stake-stat-box">
+                    <span class="stake-stat-value" id="myStakedCount">0</span>
+                    <span class="stake-stat-label">NFTs Staked</span>
+                </div>
+                <div class="stake-stat-box highlight">
+                    <span class="stake-stat-value" id="myMultiplier">1.0x</span>
+                    <span class="stake-stat-label">LP Multiplier</span>
+                </div>
+                <div class="stake-stat-box">
+                    <span class="stake-stat-value" id="stakingRewards">0 POND</span>
+                    <span class="stake-stat-label">Pending Rewards</span>
+                </div>
+            </div>
+
+            <div class="staking-actions">
+                <button class="stake-action-btn" id="unstakeAllBtn">Unstake All</button>
+                <button class="stake-action-btn primary" id="claimStakeRewardsBtn">Claim Rewards</button>
+            </div>
+
+            <h3 class="section-title">Your Staked NFTs</h3>
+            <div class="staked-nfts-grid" id="stakedNftsGrid">
+                <div class="empty-state">
+                    <p>No NFTs staked yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LP Tab -->
+        <div class="tab-content" id="tab-lp">
+            <div class="lp-container">
+                <div class="lp-header">
+                    <h2>Universal Liquidity Pool</h2>
+                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from all platform activity.</p>
+                </div>
                 
-                if (useEnumerable) {
-                    // Use ERC721Enumerable
-                    for (let i = 0; i < count && i < 100; i++) {
-                        try {
-                            const tokenId = await contract.tokenOfOwnerByIndex(userAddress, i);
-                            userNfts[col.address].push(tokenId.toNumber());
-                            allNfts.push({
-                                collection: col,
-                                tokenId: tokenId.toNumber()
-                            });
-                        } catch (err) {
-                            console.log(`Error getting token ${i} from ${col.name}:`, err.message);
-                            break;
-                        }
-                    }
-                } else {
-                    // Fallback: Use Transfer event logs to find user's tokens
-                    try {
-                        // Get Transfer events where user is recipient
-                        const transferFilter = {
-                            address: col.address,
-                            topics: [
-                                ethers.utils.id('Transfer(address,address,uint256)'),
-                                null, // from (any)
-                                ethers.utils.hexZeroPad(userAddress, 32) // to (user)
-                            ],
-                            fromBlock: 0,
-                            toBlock: 'latest'
-                        };
-                        
-                        console.log(`${col.name}: Fetching Transfer events...`);
-                        const logs = await provider.getLogs(transferFilter);
-                        console.log(`${col.name}: Found ${logs.length} incoming transfers`);
-                        
-                        // Get unique token IDs from logs
-                        const potentialTokens = new Set();
-                        for (const log of logs) {
-                            const tokenId = parseInt(log.topics[3], 16);
-                            potentialTokens.add(tokenId);
-                        }
-                        
-                        console.log(`${col.name}: Checking ${potentialTokens.size} potential tokens...`);
-                        
-                        // Check current ownership
-                        let found = 0;
-                        for (const tokenId of potentialTokens) {
-                            if (found >= count) break;
-                            try {
-                                const owner = await contract.ownerOf(tokenId);
-                                if (owner.toLowerCase() === userAddress.toLowerCase()) {
-                                    userNfts[col.address].push(tokenId);
-                                    allNfts.push({
-                                        collection: col,
-                                        tokenId: tokenId
-                                    });
-                                    found++;
-                                    console.log(`Found owned NFT: ${col.name} #${tokenId}`);
-                                }
-                            } catch {
-                                // Token might be burned or error
-                            }
-                        }
-                    } catch (eventErr) {
-                        console.log(`${col.name}: Event log query failed, trying metadata fallback...`);
-                        // Final fallback: check tokens from metadata in parallel batches
-                        const metadata = collectionMetadata[col.address];
-                        if (metadata) {
-                            const tokenIds = Object.keys(metadata).map(id => parseInt(id));
-                            let found = 0;
-                            const batchSize = 50; // Check 50 at a time
-                            console.log(`${col.name}: Scanning ${tokenIds.length} tokens for ${count} owned...`);
-                            
-                            for (let i = 0; i < tokenIds.length && found < count; i += batchSize) {
-                                const batch = tokenIds.slice(i, i + batchSize);
-                                const results = await Promise.all(
-                                    batch.map(async (tokenId) => {
-                                        try {
-                                            const owner = await contract.ownerOf(tokenId);
-                                            return { tokenId, owned: owner.toLowerCase() === userAddress.toLowerCase() };
-                                        } catch {
-                                            return { tokenId, owned: false };
-                                        }
-                                    })
-                                );
-                                
-                                for (const result of results) {
-                                    if (result.owned && found < count) {
-                                        userNfts[col.address].push(result.tokenId);
-                                        allNfts.push({
-                                            collection: col,
-                                            tokenId: result.tokenId
-                                        });
-                                        found++;
-                                        console.log(`Found owned NFT: ${col.name} #${result.tokenId} (${found}/${count})`);
-                                    }
-                                }
-                                
-                                if ((i + batchSize) % 500 === 0) {
-                                    console.log(`${col.name}: Checked ${Math.min(i + batchSize, tokenIds.length)}/${tokenIds.length}...`);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (err) {
-            console.error(`Error loading NFTs from ${col.name}:`, err);
-        }
-    }
-    
-    console.log('Total NFTs found:', allNfts.length);
-    
-    // Also get staked NFTs to show them with "STAKED" label
-    let stakedNftsList = [];
-    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
-        try {
-            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
-            for (const col of COLLECTIONS) {
-                const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
-                for (const tokenId of stakedTokens) {
-                    stakedNftsList.push({
-                        collection: col,
-                        tokenId: tokenId.toNumber(),
-                        isStaked: true
-                    });
-                }
-            }
-        } catch (err) {
-            console.error('Error loading staked NFTs for My NFTs tab:', err);
-        }
-    }
-    
-    // Combine wallet NFTs and staked NFTs
-    const combinedNfts = [
-        ...allNfts.map(nft => ({ ...nft, isStaked: false })),
-        ...stakedNftsList
-    ];
-    
-    // Render NFTs
-    if (combinedNfts.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><p>No NFTs found in your wallet</p></div>';
-    } else {
-        grid.innerHTML = '';
-        for (const nft of combinedNfts) {
-            const nftCard = createNftCard(nft.collection, nft.tokenId, nft.isStaked);
-            grid.appendChild(nftCard);
-        }
-    }
-}
+                <div class="lp-info-grid">
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="lpTvl">$0</span>
+                        <span class="lp-info-label">Total Value Locked</span>
+                    </div>
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="lpApy">0%</span>
+                        <span class="lp-info-label">Est. APY</span>
+                    </div>
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="lpYourShare">0%</span>
+                        <span class="lp-info-label">Your Share</span>
+                    </div>
+                </div>
 
-async function loadStakedNfts() {
-    if (!isConnected) return;
-    
-    // Skip if staking contract not deployed
-    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
-        document.getElementById('myStakedCount').textContent = '0';
-        document.getElementById('myMultiplier').textContent = '1.0x';
-        document.getElementById('stakingRewards').textContent = '0 POND';
-        return;
-    }
-    
-    try {
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
-        
-        // Get user stats from contract
-        const stats = await stakingContract.getUserStats(userAddress);
-        const totalStaked = stats.totalStaked.toNumber();
-        const pendingPond = parseFloat(ethers.utils.formatEther(stats.pendingPond));
-        
-        // Multiplier: base 1.0x + 0.001x per NFT (1 basis point), capped at +1.0x
-        const nftBonus = Math.min(totalStaked, 1000); // Cap at 1000
-        const multiplier = 1.0 + (nftBonus * 0.001);
-        
-        document.getElementById('myStakedCount').textContent = totalStaked;
-        document.getElementById('myMultiplier').textContent = multiplier.toFixed(3) + 'x';
-        document.getElementById('stakingRewards').textContent = pendingPond.toFixed(4) + ' POND';
-        
-        // Load staked tokens for grid
-        const grid = document.getElementById('stakedNftsGrid');
-        grid.innerHTML = '';
-        
-        for (const col of COLLECTIONS) {
-            const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
-            stakedNfts[col.address] = stakedTokens.map(t => t.toNumber());
-            
-            for (const tokenId of stakedNfts[col.address]) {
-                const nftCard = createNftCard(col, tokenId, true);
-                grid.appendChild(nftCard);
-            }
-        }
-        
-        if (totalStaked === 0) {
-            grid.innerHTML = '<div class="empty-state"><p>No NFTs staked yet</p></div>';
-        }
-        
-        // Update governance
-        updateGovernancePower(0, totalStaked); // LP power loaded separately
-        
-    } catch (err) {
-        console.error('Load staked NFTs failed:', err);
-    }
-}
+                <div class="lp-cta">
+                    <a href="https://xtoadz.club" target="_blank" class="lp-link-btn">Manage LP Position →</a>
+                </div>
 
-async function loadLpPosition() {
-    if (!isConnected) return;
-    
-    try {
-        const pool = new ethers.Contract(CONTRACTS.pondPool, PONDPOOL_ABI, provider);
-        const info = await pool.getUserInfo(userAddress);
-        
-        const poolShareBps = info.poolShareBps.toNumber();
-        const sharePercent = (poolShareBps / 100).toFixed(2);
-        
-        document.getElementById('lpYourShare').textContent = sharePercent + '%';
-        
-        // Update governance with LP power
-        const stakedCount = Object.values(stakedNfts).reduce((sum, arr) => sum + arr.length, 0);
-        updateGovernancePower(poolShareBps, stakedCount);
-        
-    } catch (err) {
-        console.error('Load LP position failed:', err);
-    }
-}
-
-function createNftCard(collection, tokenId, isStaked) {
-    const card = document.createElement('div');
-    card.className = 'nft-card';
-    
-    // Use thumbnail URI if available (PNG), otherwise use art from metadata
-    let imageUrl;
-    if (collection.thumbnailUri) {
-        // Use fast PNG thumbnails
-        imageUrl = collection.thumbnailUri + tokenId + '.png';
-    } else {
-        // Get from metadata
-        const metadata = collectionMetadata[collection.address];
-        if (metadata && metadata[tokenId]) {
-            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
-        }
-        if (!imageUrl) {
-            // Fallback to baseUri
-            imageUrl = collection.baseUri + tokenId + '.png';
-        }
-    }
-    
-    card.innerHTML = `
-        <div class="nft-image">
-            <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
-                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
-            ${isStaked ? '<div class="staked-badge">STAKED</div>' : ''}
+                <div class="lp-multiplier-info">
+                    <h3>LP Multipliers</h3>
+                    <p>Stake NFTs to boost your LP rewards:</p>
+                    <ul class="multiplier-list">
+                        <li><span class="mult-badge">+0.1%</span> per NFT staked (any collection)</li>
+                        <li><span class="mult-badge">Max +100%</span> bonus (1000 NFTs)</li>
+                        <li><span class="mult-badge">3.5x</span> maximum total multiplier</li>
+                    </ul>
+                    <p class="multiplier-note">Combined with time-lock bonuses (1x-2.5x), earn up to 3.5x rewards.</p>
+                </div>
+            </div>
         </div>
-        <div class="nft-info">
-            <div class="nft-name">${collection.name} #${tokenId}</div>
-            <div class="nft-collection">${collection.symbol}</div>
-        </div>
-    `;
-    
-    card.style.cursor = 'pointer';
-    card.addEventListener('click', () => openNftModal(collection, tokenId, isStaked, imageUrl));
-    
-    return card;
-}
 
-// ==================== TAB SWITCHING ====================
-function switchTab(tab) {
-    // If viewing a collection and switching to collections, go back to main view
-    if (tab === 'collections' && currentCollectionView) {
-        closeCollectionView();
-        return;
-    }
-    
-    currentTab = tab;
-    
-    // Update nav buttons
-    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    
-    // Update content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('active', content.id === `tab-${tab}`);
-    });
-}
+        <!-- Governance Tab -->
+        <div class="tab-content" id="tab-governance">
+            <div class="gov-container">
+                <div class="gov-header">
+                    <h2>Governance</h2>
+                    <p>LP holders and NFT stakers govern the protocol.</p>
+                </div>
+                
+                <div class="gov-power">
+                    <div class="gov-power-box">
+                        <span class="gov-power-value" id="govVotingPower">0</span>
+                        <span class="gov-power-label">Your Voting Power</span>
+                    </div>
+                </div>
 
-// ==================== COLLECTION VIEW ====================
-function openCollectionView(collection) {
-    currentCollectionView = collection;
-    
-    const grid = document.getElementById('collectionsGrid');
-    
-    // Change parent to block display for proper layout
-    grid.style.display = 'block';
-    
-    // Create collection detail view
-    grid.innerHTML = `
-        <div class="collection-detail-view">
-            <div class="collection-detail-header">
-                <button class="back-btn" onclick="closeCollectionView()">← Back</button>
-                <div class="collection-detail-info">
-                    <img src="${collection.image}" class="collection-detail-avatar" alt="${collection.name}"
-                         onerror="this.style.display='none'">
-                    <div class="collection-detail-text">
-                        <h2>${collection.name}</h2>
-                        <p>${collection.description}</p>
-                        <div class="collection-detail-stats">
-                            <span>${formatNumber(collection.supply)} items</span>
-                            <span class="multiplier-badge">🔥 LP Boost Eligible</span>
+                <div class="gov-breakdown">
+                    <h3>Power Breakdown</h3>
+                    <div class="power-row">
+                        <span>LP Position</span>
+                        <span id="govLpPower">0</span>
+                    </div>
+                    <div class="power-row">
+                        <span>Staked NFTs</span>
+                        <span id="govNftPower">0</span>
+                    </div>
+                </div>
+
+                <div class="proposals-section">
+                    <h3>Active Proposals</h3>
+                    <div class="proposals-list" id="proposalsList">
+                        <div class="empty-state">
+                            <p>No active proposals</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="collection-detail-filters">
-                <input type="text" placeholder="Search by ID..." class="search-input" id="nftSearchInput">
-                <select id="nftSortSelect">
-                    <option value="id-asc">ID: Low to High</option>
-                    <option value="id-desc">ID: High to Low</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                </select>
-            </div>
-            <div class="collection-nfts-grid" id="collectionNftsGrid">
-                <div class="empty-state"><p>Loading NFTs...</p></div>
+        </div>
+    </main>
+
+    <!-- NFT Detail Modal -->
+    <div class="modal-overlay" id="nftModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">×</button>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modalNftImage" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modalNftName">NFT Name</h2>
+                    <p class="modal-collection" id="modalCollection">Collection</p>
+                    
+                    <div class="modal-traits" id="modalTraits">
+                        <!-- Traits populated by JS -->
+                    </div>
+
+                    <div class="modal-price-section" id="modalPriceSection">
+                        <div class="modal-price">
+                            <span class="price-label">Price</span>
+                            <span class="price-value" id="modalPrice">Not Listed</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions" id="modalActions">
+                        <!-- Actions populated by JS based on ownership/listing status -->
+                    </div>
+
+                    <div class="modal-history" id="modalHistory">
+                        <h4>Activity</h4>
+                        <div class="history-list" id="historyList">
+                            <!-- History populated by JS -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    `;
-    
-    // Load NFTs for this collection
-    loadCollectionNfts(collection);
-    
-    // Setup search
-    document.getElementById('nftSearchInput').addEventListener('input', (e) => {
-        filterCollectionNfts(collection, e.target.value);
-    });
-    
-    // Setup sort
-    document.getElementById('nftSortSelect').addEventListener('change', (e) => {
-        sortCollectionNfts(collection, e.target.value);
-    });
-}
+    </div>
 
-function closeCollectionView() {
-    currentCollectionView = null;
-    loadCollections();
-}
-
-async function loadCollectionNfts(collection) {
-    const grid = document.getElementById('collectionNftsGrid');
-    const metadata = collectionMetadata[collection.address];
-    
-    if (!metadata) {
-        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
-        return;
-    }
-    
-    grid.innerHTML = '';
-    
-    // Show first 100 NFTs
-    const tokenIds = Object.keys(metadata).slice(0, 100);
-    
-    for (const tokenIdStr of tokenIds) {
-        const tokenId = parseInt(tokenIdStr);
-        const nftData = metadata[tokenIdStr];
-        
-        const card = document.createElement('div');
-        card.className = 'nft-card';
-        card.dataset.tokenId = tokenId;
-        
-        // Use thumbnail URI if available (PNG), otherwise use art from metadata
-        let imageUrl;
-        if (collection.thumbnailUri) {
-            imageUrl = collection.thumbnailUri + tokenId + '.png';
-        } else {
-            imageUrl = nftData.art || nftData.image || collection.baseUri + tokenId + '.png';
-        }
-        
-        card.innerHTML = `
-            <div class="nft-image">
-                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
-                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+    <!-- Listing Modal -->
+    <div class="modal-overlay" id="listingModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="modal-close" onclick="closeListingModal()">×</button>
+            <div class="modal-body" style="padding: 24px;">
+                <h2 style="margin-bottom: 8px;">List NFT for Sale</h2>
+                <p id="listingNftName" style="color: var(--text-muted); margin-bottom: 24px;">NFT #123</p>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in SGB (leave empty to not accept)</label>
+                    <input type="number" id="listingPriceSGB" placeholder="0.00" step="0.01" min="0" 
+                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in POND (leave empty to not accept)</label>
+                    <input type="number" id="listingPricePOND" placeholder="0.00" step="1" min="0"
+                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+                </div>
+                
+                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">5% fee on sales. Set at least one price.</p>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button class="modal-btn secondary" onclick="closeListingModal()" style="flex: 1;">Cancel</button>
+                    <button class="modal-btn primary" id="confirmListingBtn" onclick="confirmListing()" style="flex: 1;">List NFT</button>
+                </div>
             </div>
-            <div class="nft-info">
-                <div class="nft-name">${collection.name} #${tokenId}</div>
-                <div class="nft-collection">${collection.symbol}</div>
-            </div>
-        `;
-        
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
-        
-        grid.appendChild(card);
-    }
-}
+        </div>
+    </div>
 
-function filterCollectionNfts(collection, searchTerm) {
-    const grid = document.getElementById('collectionNftsGrid');
-    const cards = grid.querySelectorAll('.nft-card');
-    
-    cards.forEach(card => {
-        const tokenId = card.dataset.tokenId;
-        if (!searchTerm || tokenId.includes(searchTerm)) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
 
-function sortCollectionNfts(collection, sortBy) {
-    const grid = document.getElementById('collectionNftsGrid');
-    const cards = Array.from(grid.querySelectorAll('.nft-card'));
-    
-    cards.sort((a, b) => {
-        const idA = parseInt(a.dataset.tokenId);
-        const idB = parseInt(b.dataset.tokenId);
-        
-        switch (sortBy) {
-            case 'id-asc':
-                return idA - idB;
-            case 'id-desc':
-                return idB - idA;
-            default:
-                return idA - idB;
-        }
-    });
-    
-    cards.forEach(card => grid.appendChild(card));
-}
-
-function filterCollections(filter) {
-    // For now just reload - can add more collections later
-    loadCollections();
-}
-
-function sortCollections(sortBy) {
-    console.log('Sort by:', sortBy);
-}
-
-// ==================== NFT MODAL ====================
-function openNftModal(collection, tokenId, isStaked, imageUrl) {
-    const modal = document.getElementById('nftModal');
-    
-    // Use provided imageUrl or construct it
-    if (!imageUrl) {
-        const metadata = collectionMetadata[collection.address];
-        if (metadata && metadata[tokenId]) {
-            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
-        }
-        if (!imageUrl) {
-            if (collection.baseUri.includes('ipfs://')) {
-                imageUrl = collection.baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/') + tokenId + '.png';
-            } else if (collection.baseUri.endsWith('/')) {
-                imageUrl = collection.baseUri + tokenId + '.png';
-            } else {
-                imageUrl = collection.baseUri;
-            }
-        }
-    }
-    
-    document.getElementById('modalNftImage').src = imageUrl;
-    document.getElementById('modalNftName').textContent = `${collection.name} #${tokenId}`;
-    document.getElementById('modalCollection').textContent = collection.name;
-    
-    // Clear traits (would load from metadata)
-    const traitsEl = document.getElementById('modalTraits');
-    const metadata = collectionMetadata[collection.address];
-    if (metadata && metadata[tokenId] && metadata[tokenId].traits) {
-        traitsEl.innerHTML = `<div class="trait-item"><span>Traits</span><span>${metadata[tokenId].traits}</span></div>`;
-    } else {
-        traitsEl.innerHTML = '';
-    }
-    
-    // Set price section
-    document.getElementById('modalPrice').textContent = 'Not Listed';
-    
-    // Set actions based on ownership and staking status
-    const actionsEl = document.getElementById('modalActions');
-    
-    if (isStaked) {
-        actionsEl.innerHTML = `
-            <button class="modal-btn primary" onclick="unstakeNft('${collection.address}', ${tokenId})">Unstake</button>
-        `;
-    } else {
-        actionsEl.innerHTML = `
-            <button class="modal-btn primary" onclick="stakeNft('${collection.address}', ${tokenId})">Stake for LP Boost</button>
-            <button class="modal-btn secondary" onclick="listNft('${collection.address}', ${tokenId})">List for Sale</button>
-        `;
-    }
-    
-    // Clear history
-    document.getElementById('historyList').innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No activity yet</div>';
-    
-    modal.classList.add('active');
-}
-
-function closeModal() {
-    document.getElementById('nftModal').classList.remove('active');
-}
-
-// ==================== STAKING ACTIONS ====================
-async function stakeNft(collectionAddress, tokenId) {
-    if (!isConnected) {
-        showToast('Connect wallet first', 'error');
-        return;
-    }
-    
-    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
-        showToast('Staking contract coming soon', 'error');
-        return;
-    }
-    
-    // Get button and set loading state
-    const actionsEl = document.getElementById('modalActions');
-    const originalHtml = actionsEl.innerHTML;
-    
-    try {
-        // Check if approval needed
-        const nftContract = new ethers.Contract(collectionAddress, ERC721_ABI, signer);
-        const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
-        
-        if (!isApproved) {
-            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Approving...</button>`;
-            const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
-            await approveTx.wait();
-        }
-        
-        // Stake
-        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Staking...</button>`;
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.stake(collectionAddress, tokenId);
-        await tx.wait();
-        
-        showToast('NFT staked successfully!');
-        closeModal();
-        await loadUserNfts();
-        await loadStakedNfts();
-        
-    } catch (err) {
-        console.error('Stake failed:', err);
-        showToast('Staking failed: ' + (err.reason || err.message), 'error');
-        actionsEl.innerHTML = originalHtml; // Restore buttons on error
-    }
-}
-
-async function unstakeNft(collectionAddress, tokenId) {
-    if (!isConnected) return;
-    
-    // Get button and set loading state
-    const actionsEl = document.getElementById('modalActions');
-    const originalHtml = actionsEl.innerHTML;
-    
-    try {
-        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Unstaking...</button>`;
-        
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.unstake(collectionAddress, tokenId);
-        await tx.wait();
-        
-        showToast('NFT unstaked successfully!');
-        closeModal();
-        await loadUserNfts();
-        await loadStakedNfts();
-        
-    } catch (err) {
-        console.error('Unstake failed:', err);
-        showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
-        actionsEl.innerHTML = originalHtml; // Restore button on error
-    }
-}
-
-async function stakeAllNfts() {
-    if (!isConnected) {
-        showToast('Connect wallet first', 'error');
-        return;
-    }
-    
-    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
-        showToast('Staking contract coming soon', 'error');
-        return;
-    }
-    
-    try {
-        showToast('Staking all NFTs...');
-        
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        
-        for (const col of COLLECTIONS) {
-            const tokens = userNfts[col.address] || [];
-            if (tokens.length === 0) continue;
-            
-            // Approve if needed
-            const nftContract = new ethers.Contract(col.address, ERC721_ABI, signer);
-            const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
-            
-            if (!isApproved) {
-                showToast(`Approving ${col.name}...`);
-                const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
-                await approveTx.wait();
-            }
-            
-            // Stake batch
-            showToast(`Staking ${tokens.length} ${col.name}...`);
-            const tx = await stakingContract.stakeBatch(col.address, tokens);
-            await tx.wait();
-        }
-        
-        showToast('All NFTs staked!');
-        await loadUserNfts();
-        await loadStakedNfts();
-        
-    } catch (err) {
-        console.error('Stake all failed:', err);
-        showToast('Staking failed: ' + (err.reason || err.message), 'error');
-    }
-}
-
-async function unstakeAllNfts() {
-    if (!isConnected) return;
-    
-    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
-        showToast('Staking contract coming soon', 'error');
-        return;
-    }
-    
-    try {
-        showToast('Unstaking all NFTs...');
-        
-        const btn = document.getElementById('unstakeAllBtn');
-        const originalText = btn.textContent;
-        btn.textContent = 'Unstaking...';
-        btn.disabled = true;
-        
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.unstakeAll();
-        await tx.wait();
-        
-        showToast('All NFTs unstaked!');
-        btn.textContent = originalText;
-        btn.disabled = false;
-        await loadUserNfts();
-        await loadStakedNfts();
-        
-    } catch (err) {
-        console.error('Unstake all failed:', err);
-        showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
-        const btn = document.getElementById('unstakeAllBtn');
-        if (btn) {
-            btn.textContent = 'Unstake All';
-            btn.disabled = false;
-        }
-    }
-}
-
-async function claimStakingRewards() {
-    if (!isConnected) return;
-    
-    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
-        showToast('Staking contract coming soon', 'error');
-        return;
-    }
-    
-    const btn = document.getElementById('claimStakeRewardsBtn');
-    const originalText = btn.textContent;
-    
-    try {
-        btn.textContent = 'Claiming...';
-        btn.disabled = true;
-        
-        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.claimRewards();
-        await tx.wait();
-        
-        showToast('Rewards claimed!');
-        btn.textContent = originalText;
-        btn.disabled = false;
-        await loadBalances();
-        await loadStakedNfts();
-        
-    } catch (err) {
-        console.error('Claim failed:', err);
-        showToast('Claim failed: ' + (err.reason || err.message), 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-}
-
-// ==================== MARKETPLACE ACTIONS ====================
-async function listNft(collectionAddress, tokenId) {
-    if (!isConnected) return;
-    
-    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') {
-        showToast('Marketplace coming soon', 'error');
-        return;
-    }
-    
-    // TODO: Show listing modal with price input
-    showToast('Listing coming soon');
-}
-
-// ==================== GOVERNANCE ====================
-function updateGovernancePower(lpShareBps, stakedNftCount) {
-    const lpPower = lpShareBps; // 1 bps = 1 power
-    const nftPower = stakedNftCount * 100; // 100 power per NFT
-    const totalPower = lpPower + nftPower;
-    
-    document.getElementById('govVotingPower').textContent = formatNumber(totalPower);
-    document.getElementById('govLpPower').textContent = formatNumber(lpPower);
-    document.getElementById('govNftPower').textContent = formatNumber(nftPower);
-}
-
-// ==================== UTILITIES ====================
-function formatAddress(address) {
-    return address.slice(0, 6) + '...' + address.slice(-4);
-}
-
-function formatNumber(num) {
-    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toLocaleString();
-}
-
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 4000);
-}
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="contracts.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
