@@ -1,128 +1,1235 @@
-// ==================== NETWORK CONFIG ====================
-const SONGBIRD_RPC = 'https://songbird-api.flare.network/ext/C/rpc';
-const SONGBIRD_CHAIN_ID = 19;
+/* ==================== RESET & BASE ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-// ==================== CONTRACT ADDRESSES ====================
-const CONTRACTS = {
-    // Tokens
-    pondToken: '0x39fec3F97668e393862Dbb3C442f3Dd3d5016D69',
-    wsgb: '0x02f0826ef6aD107Cfc861152B32B52fD11BaB9ED',
-    
-    // LP Pool
-    pondPool: '0xBe942e51AB1617AFfe7E40F2f7bD4b022548e1Bd',
-    
-    // NFT Collections (stakeable for multipliers)
-    sToadz: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642',
-    luxuryLofts: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8',
-    songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
-    
-    // NFT Staking Contract (TODO: update after deployment)
-    nftStaking: '0x0000000000000000000000000000000000000000',
-    
-    // Marketplace Contract (TODO: deploy)
-    marketplace: '0x0000000000000000000000000000000000000000'
-};
+:root {
+    --bg-primary: #020617;
+    --bg-secondary: #0f172a;
+    --bg-tertiary: #1e293b;
+    --border: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --green-primary: #10b981;
+    --green-secondary: #34d399;
+    --green-glow: rgba(16, 185, 129, 0.3);
+    --orange-primary: #f59e0b;
+    --red-primary: #ef4444;
+    --purple-primary: #a855f7;
+}
 
-// ==================== COLLECTION METADATA ====================
-const COLLECTIONS = [
-    {
-        address: CONTRACTS.sToadz,
-        name: 'sToadz',
-        symbol: 'STOADZ',
-        supply: 10000,
-        description: 'The original toad collection on Songbird. Stake for POND rewards + LP boost.',
-        image: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
-        featured: true,
-        jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
-    },
-    {
-        address: CONTRACTS.luxuryLofts,
-        name: 'Luxury Lofts',
-        symbol: 'LOFT',
-        supply: 10000,
-        description: 'Premium real estate on Songbird. Stake for POND rewards + LP boost.',
-        image: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg',
-        baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
-        featured: true,
-        jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
-    },
-    {
-        address: CONTRACTS.songbirdCity,
-        name: 'Songbird City',
-        symbol: 'SBCITY',
-        supply: 10000,
-        description: 'Urban NFTs on Songbird Network. Stake for POND rewards + LP boost.',
-        image: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
-        baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
-        featured: true,
-        jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ==================== HEADER ==================== */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(2, 6, 23, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.logo {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 18px;
+    color: var(--green-primary);
+    text-decoration: none;
+    text-shadow: 0 0 20px var(--green-glow);
+}
+
+.nav {
+    display: flex;
+    gap: 4px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.nav-btn.active {
+    color: var(--green-primary);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.balances {
+    display: flex;
+    gap: 16px;
+    padding-right: 16px;
+    border-right: 1px solid var(--border);
+}
+
+.balance-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.balance-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.balance-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.connect-btn {
+    background: linear-gradient(135deg, var(--green-primary), #059669);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.connect-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--green-glow);
+}
+
+.connect-btn.connected {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--green-primary);
+}
+
+.notification-btn {
+    position: relative;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.notification-btn:hover {
+    border-color: var(--green-primary);
+    color: var(--text-primary);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--red-primary);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notif-badge:empty,
+.notif-badge[data-count="0"] {
+    display: none;
+}
+
+/* ==================== MOBILE NAV ==================== */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 8px;
+    z-index: 100;
+}
+
+.mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 8px;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.mobile-nav-btn.active {
+    color: var(--green-primary);
+}
+
+.mobile-nav-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ==================== MAIN CONTENT ==================== */
+.main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    padding-bottom: 100px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ==================== FEATURED BANNER ==================== */
+.featured-banner {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.featured-text h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--green-primary), var(--green-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.featured-text p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.featured-stats {
+    display: flex;
+    gap: 32px;
+}
+
+.feat-stat {
+    text-align: center;
+}
+
+.feat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.feat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* ==================== FILTERS ==================== */
+.filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    border-color: var(--green-primary);
+    color: var(--green-primary);
+}
+
+.sort-dropdown select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* ==================== COLLECTIONS GRID ==================== */
+.collections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.collection-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.collection-card:hover {
+    border-color: var(--green-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.collection-banner {
+    height: 120px;
+    background: var(--bg-tertiary);
+    position: relative;
+    overflow: hidden;
+}
+
+.collection-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.collection-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.collection-card:hover {
+    border-color: var(--green-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.collection-banner {
+    height: 120px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+}
+
+.collection-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.collection-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.collection-info {
+    padding: 20px;
+}
+
+.collection-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.collection-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.collection-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.col-stat {
+    text-align: center;
+}
+
+.col-stat-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.col-stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.multiplier-badge {
+    display: inline-block;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--green-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 12px;
+}
+
+/* ==================== COLLECTION DETAIL VIEW ==================== */
+.collection-detail-view {
+    width: 100%;
+    grid-column: 1 / -1; /* Span full width of parent grid */
+}
+
+.collection-detail-header {
+    margin-bottom: 32px;
+}
+
+.back-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+}
+
+.back-btn:hover {
+    border-color: var(--green-primary);
+    color: var(--green-primary);
+}
+
+.collection-detail-info {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.collection-detail-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    object-fit: cover;
+    background: var(--bg-tertiary);
+}
+
+.collection-detail-text h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.collection-detail-text p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    max-width: 600px;
+}
+
+.collection-detail-stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.collection-detail-stats span {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.collection-detail-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    width: 200px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--green-primary);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.collection-detail-filters select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.collection-nfts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Staked badge on NFT cards */
+.staked-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--purple-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.nft-image {
+    position: relative;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .collection-detail-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
     }
-];
+    
+    .collection-detail-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .collection-detail-filters {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+}
 
-// ==================== ABIs ====================
-const ERC721_ABI = [
-    'function balanceOf(address owner) view returns (uint256)',
-    'function ownerOf(uint256 tokenId) view returns (address)',
-    'function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)',
-    'function tokenURI(uint256 tokenId) view returns (string)',
-    'function approve(address to, uint256 tokenId)',
-    'function setApprovalForAll(address operator, bool approved)',
-    'function isApprovedForAll(address owner, address operator) view returns (bool)',
-    'function safeTransferFrom(address from, address to, uint256 tokenId)',
-    'function name() view returns (string)',
-    'function symbol() view returns (string)',
-    'function totalSupply() view returns (uint256)'
-];
+/* ==================== NFT GRID ==================== */
+.my-nfts-header,
+.staking-header {
+    margin-bottom: 24px;
+}
 
-const ERC20_ABI = [
-    'function balanceOf(address owner) view returns (uint256)',
-    'function allowance(address owner, address spender) view returns (uint256)',
-    'function approve(address spender, uint256 amount) returns (bool)',
-    'function transfer(address to, uint256 amount) returns (bool)',
-    'function decimals() view returns (uint8)',
-    'function symbol() view returns (string)'
-];
+.my-nfts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-const PONDPOOL_ABI = [
-    'function reserveSGB() view returns (uint256)',
-    'function reservePOND() view returns (uint256)',
-    'function getUserInfo(address user) view returns (uint256 sgbDeposited, uint256 pondDeposited, uint256 lockTier, uint256 lockExpires, uint256 weightedShares, uint256 poolShareBps, uint256 multiplier, uint256 pendingPond, uint256 pendingSgb, uint256 claimableIn)',
-    'function addLiquidity(uint256 pondAmount, uint8 lockTier) payable',
-    'function addMore(uint256 pondAmount) payable',
-    'function removeLiquidity()',
-    'function claimPondRewards()',
-    'function claimSgbRewards()',
-    'function swapSgbForPond() payable returns (uint256)',
-    'function swapPondForSgb(uint256 pondAmount) returns (uint256)'
-];
+.my-nfts-header h2,
+.staking-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+}
 
-// NFT Staking ABI
-const NFT_STAKING_ABI = [
-    'function stake(address collection, uint256 tokenId)',
-    'function stakeBatch(address collection, uint256[] tokenIds)',
-    'function unstake(address collection, uint256 tokenId)',
-    'function unstakeBatch(address collection, uint256[] tokenIds)',
-    'function unstakeAll()',
-    'function claimRewards()',
-    'function getStakedNFTCount(address user) view returns (uint256)',
-    'function getStakedTokens(address user, address collection) view returns (uint256[])',
-    'function pendingRewards(address user) view returns (uint256)',
-    'function getUserStats(address user) view returns (uint256 totalStaked, uint256 stakedSToadz, uint256 stakedLofts, uint256 stakedCity, uint256 pendingPond)',
-    'function getGlobalStats() view returns (uint256 totalNFTsStaked, uint256 dailyReward, uint256 rewardPerNFTPerDay, uint256 contractPondBalance)',
-    'function totalStakedNFTs() view returns (uint256)',
-    'function dailyRewardAmount() view returns (uint256)'
-];
+.staking-sub {
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
 
-// Marketplace ABI (placeholder - update when contract deployed)
-const MARKETPLACE_ABI = [
-    'function listNFT(address collection, uint256 tokenId, uint256 price)',
-    'function cancelListing(address collection, uint256 tokenId)',
-    'function buyNFT(address collection, uint256 tokenId) payable',
-    'function makeOffer(address collection, uint256 tokenId, uint256 price) payable',
-    'function acceptOffer(address collection, uint256 tokenId, address offerer)',
-    'function cancelOffer(address collection, uint256 tokenId)',
-    'function getListing(address collection, uint256 tokenId) view returns (address seller, uint256 price, bool active)',
-    'function getOffers(address collection, uint256 tokenId) view returns (tuple(address offerer, uint256 price, uint256 timestamp)[])'
-];
+.action-btn {
+    background: var(--green-primary);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #059669;
+}
+
+.my-nfts-grid,
+.staked-nfts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.nft-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nft-card:hover {
+    border-color: var(--green-primary);
+    transform: translateY(-2px);
+}
+
+.nft-card.staked {
+    border-color: var(--purple-primary);
+}
+
+.nft-image {
+    aspect-ratio: 1;
+    background: var(--bg-tertiary);
+}
+
+.nft-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nft-image video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nft-info {
+    padding: 12px;
+}
+
+.nft-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.nft-price {
+    font-size: 13px;
+    color: var(--green-primary);
+    font-weight: 500;
+}
+
+.nft-collection {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+/* ==================== STAKING STATS ==================== */
+.staking-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stake-stat-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stake-stat-box.highlight {
+    border-color: var(--green-primary);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.stake-stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stake-stat-box.highlight .stake-stat-value {
+    color: var(--green-primary);
+}
+
+.stake-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.staking-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.stake-action-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stake-action-btn:hover {
+    border-color: var(--text-secondary);
+}
+
+.stake-action-btn.primary {
+    background: var(--green-primary);
+    border-color: var(--green-primary);
+}
+
+.stake-action-btn.primary:hover {
+    background: #059669;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+/* ==================== LP TAB ==================== */
+.lp-container,
+.gov-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.lp-header,
+.gov-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.lp-header h2,
+.gov-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.lp-header p,
+.gov-header p {
+    color: var(--text-secondary);
+}
+
+.lp-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.lp-info-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.lp-info-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--green-primary);
+}
+
+.lp-info-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.lp-cta {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.lp-link-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--green-primary), #059669);
+    color: white;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.lp-link-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px var(--green-glow);
+}
+
+.lp-multiplier-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.lp-multiplier-info h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.lp-multiplier-info p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.multiplier-list {
+    list-style: none;
+}
+
+.multiplier-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.multiplier-list li:last-child {
+    border-bottom: none;
+}
+
+.mult-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--green-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ==================== GOVERNANCE TAB ==================== */
+.gov-power {
+    margin-bottom: 32px;
+}
+
+.gov-power-box {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+}
+
+.gov-power-value {
+    display: block;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--green-primary);
+}
+
+.gov-power-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.gov-breakdown {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.gov-breakdown h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.power-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.power-row:last-child {
+    border-bottom: none;
+}
+
+.power-row span:last-child {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.proposals-section h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+}
+
+.proposals-list {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* ==================== MODAL ==================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    padding: 20px;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--bg-tertiary);
+    border: none;
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.modal-image {
+    aspect-ratio: 1;
+    background: var(--bg-tertiary);
+}
+
+.modal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal-info {
+    padding: 24px;
+}
+
+.modal-info h2 {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.modal-collection {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.modal-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.trait-tag {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.trait-tag span {
+    color: var(--text-muted);
+}
+
+.modal-price-section {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.price-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.price-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--green-primary);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-btn.primary {
+    background: var(--green-primary);
+    border: none;
+    color: white;
+}
+
+.modal-btn.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.modal-history h4 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.history-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+/* ==================== TOAST ==================== */
+.toast-container {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toast {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 280px;
+    animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+    border-color: var(--green-primary);
+}
+
+.toast.error {
+    border-color: var(--red-primary);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .nav {
+        display: none;
+    }
+    
+    .mobile-nav {
+        display: flex;
+    }
+    
+    .header {
+        padding: 12px 16px;
+    }
+    
+    .balances {
+        display: none;
+    }
+    
+    .main {
+        padding: 16px;
+        padding-bottom: 120px;
+    }
+    
+    .featured-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 24px;
+    }
+    
+    .featured-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .collections-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-body {
+        grid-template-columns: 1fr;
+    }
+    
+    .staking-stats,
+    .lp-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .my-nfts-grid,
+    .staked-nfts-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .header-right {
+        gap: 8px;
+    }
+    
+    .connect-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
