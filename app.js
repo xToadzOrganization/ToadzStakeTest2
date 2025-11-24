@@ -384,13 +384,39 @@ async function loadUserNfts() {
     
     console.log('Total NFTs found:', allNfts.length);
     
+    // Also get staked NFTs to show them with "STAKED" label
+    let stakedNftsList = [];
+    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
+        try {
+            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
+            for (const col of COLLECTIONS) {
+                const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
+                for (const tokenId of stakedTokens) {
+                    stakedNftsList.push({
+                        collection: col,
+                        tokenId: tokenId.toNumber(),
+                        isStaked: true
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error loading staked NFTs for My NFTs tab:', err);
+        }
+    }
+    
+    // Combine wallet NFTs and staked NFTs
+    const combinedNfts = [
+        ...allNfts.map(nft => ({ ...nft, isStaked: false })),
+        ...stakedNftsList
+    ];
+    
     // Render NFTs
-    if (allNfts.length === 0) {
+    if (combinedNfts.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No NFTs found in your wallet</p></div>';
     } else {
         grid.innerHTML = '';
-        for (const nft of allNfts) {
-            const nftCard = createNftCard(nft.collection, nft.tokenId, false);
+        for (const nft of combinedNfts) {
+            const nftCard = createNftCard(nft.collection, nft.tokenId, nft.isStaked);
             grid.appendChild(nftCard);
         }
     }
@@ -420,8 +446,8 @@ async function loadStakedNfts() {
         const multiplier = 1.0 + (nftBonus * 0.001);
         
         document.getElementById('myStakedCount').textContent = totalStaked;
-        document.getElementById('myMultiplier').textContent = multiplier.toFixed(2) + 'x';
-        document.getElementById('stakingRewards').textContent = pendingPond.toFixed(2) + ' POND';
+        document.getElementById('myMultiplier').textContent = multiplier.toFixed(3) + 'x';
+        document.getElementById('stakingRewards').textContent = pendingPond.toFixed(4) + ' POND';
         
         // Load staked tokens for grid
         const grid = document.getElementById('stakedNftsGrid');
@@ -756,20 +782,23 @@ async function stakeNft(collectionAddress, tokenId) {
         return;
     }
     
+    // Get button and set loading state
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
     try {
-        showToast('Staking NFT...');
-        
-        // Approve if needed
+        // Check if approval needed
         const nftContract = new ethers.Contract(collectionAddress, ERC721_ABI, signer);
         const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
         
         if (!isApproved) {
-            showToast('Approving NFT collection...');
+            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Approving...</button>`;
             const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
             await approveTx.wait();
         }
         
-        // Stake single NFT
+        // Stake
+        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Staking...</button>`;
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         const tx = await stakingContract.stake(collectionAddress, tokenId);
         await tx.wait();
@@ -782,14 +811,19 @@ async function stakeNft(collectionAddress, tokenId) {
     } catch (err) {
         console.error('Stake failed:', err);
         showToast('Staking failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml; // Restore buttons on error
     }
 }
 
 async function unstakeNft(collectionAddress, tokenId) {
     if (!isConnected) return;
     
+    // Get button and set loading state
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
     try {
-        showToast('Unstaking NFT...');
+        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Unstaking...</button>`;
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         const tx = await stakingContract.unstake(collectionAddress, tokenId);
@@ -803,6 +837,7 @@ async function unstakeNft(collectionAddress, tokenId) {
     } catch (err) {
         console.error('Unstake failed:', err);
         showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml; // Restore button on error
     }
 }
 
@@ -863,17 +898,29 @@ async function unstakeAllNfts() {
     try {
         showToast('Unstaking all NFTs...');
         
+        const btn = document.getElementById('unstakeAllBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Unstaking...';
+        btn.disabled = true;
+        
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         const tx = await stakingContract.unstakeAll();
         await tx.wait();
         
         showToast('All NFTs unstaked!');
+        btn.textContent = originalText;
+        btn.disabled = false;
         await loadUserNfts();
         await loadStakedNfts();
         
     } catch (err) {
         console.error('Unstake all failed:', err);
         showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
+        const btn = document.getElementById('unstakeAllBtn');
+        if (btn) {
+            btn.textContent = 'Unstake All';
+            btn.disabled = false;
+        }
     }
 }
 
@@ -885,19 +932,28 @@ async function claimStakingRewards() {
         return;
     }
     
+    const btn = document.getElementById('claimStakeRewardsBtn');
+    const originalText = btn.textContent;
+    
     try {
-        showToast('Claiming rewards...');
+        btn.textContent = 'Claiming...';
+        btn.disabled = true;
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         const tx = await stakingContract.claimRewards();
         await tx.wait();
         
         showToast('Rewards claimed!');
+        btn.textContent = originalText;
+        btn.disabled = false;
         await loadBalances();
+        await loadStakedNfts();
         
     } catch (err) {
         console.error('Claim failed:', err);
         showToast('Claim failed: ' + (err.reason || err.message), 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
     }
 }
 
