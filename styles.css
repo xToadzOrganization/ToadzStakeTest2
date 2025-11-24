@@ -441,6 +441,7 @@ body {
 /* ==================== COLLECTION DETAIL VIEW ==================== */
 .collection-detail-view {
     width: 100%;
+    grid-column: 1 / -1; /* Span full width of parent grid */
 }
 
 .collection-detail-header {
@@ -542,9 +543,10 @@ body {
 }
 
 .collection-nfts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
     gap: 16px;
+    width: 100%;
 }
 
 /* Staked badge on NFT cards */
