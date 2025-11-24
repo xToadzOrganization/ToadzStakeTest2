@@ -244,236 +244,161 @@ async function loadUserNfts() {
     }
     
     const grid = document.getElementById('myNftsGrid');
-    grid.innerHTML = '<div class="empty-state"><p>Loading NFTs...</p></div>';
+    grid.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
     
     userNfts = {};
-    let allNfts = [];
+    COLLECTIONS.forEach(col => userNfts[col.address] = []);
     
-    console.log('Loading NFTs for wallet:', userAddress);
+    // Run ALL queries in parallel - wallet NFTs, staked NFTs, listed NFTs
+    const [walletNfts, stakedNfts, listedNfts] = await Promise.all([
+        loadWalletNfts(),
+        loadStakedNftsForUser(),
+        loadListedNftsForUser()
+    ]);
     
-    for (const col of COLLECTIONS) {
-        try {
-            console.log(`Checking ${col.name}...`);
-            const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
-            const balance = await contract.balanceOf(userAddress);
-            const count = balance.toNumber();
-            
-            console.log(`${col.name}: balance = ${count}`);
-            
-            userNfts[col.address] = [];
-            
-            if (count > 0) {
-                // Try enumerable method first
-                let useEnumerable = true;
-                try {
-                    await contract.tokenOfOwnerByIndex(userAddress, 0);
-                } catch {
-                    useEnumerable = false;
-                    console.log(`${col.name}: Not enumerable, using Transfer event fallback`);
-                }
-                
-                if (useEnumerable) {
-                    // Use ERC721Enumerable
-                    for (let i = 0; i < count && i < 100; i++) {
-                        try {
-                            const tokenId = await contract.tokenOfOwnerByIndex(userAddress, i);
-                            userNfts[col.address].push(tokenId.toNumber());
-                            allNfts.push({
-                                collection: col,
-                                tokenId: tokenId.toNumber()
-                            });
-                        } catch (err) {
-                            console.log(`Error getting token ${i} from ${col.name}:`, err.message);
-                            break;
-                        }
-                    }
-                } else {
-                    // Fallback: Use Transfer event logs to find user's tokens
-                    try {
-                        // Get Transfer events where user is recipient
-                        const transferFilter = {
-                            address: col.address,
-                            topics: [
-                                ethers.utils.id('Transfer(address,address,uint256)'),
-                                null, // from (any)
-                                ethers.utils.hexZeroPad(userAddress, 32) // to (user)
-                            ],
-                            fromBlock: 0,
-                            toBlock: 'latest'
-                        };
-                        
-                        console.log(`${col.name}: Fetching Transfer events...`);
-                        const logs = await provider.getLogs(transferFilter);
-                        console.log(`${col.name}: Found ${logs.length} incoming transfers`);
-                        
-                        // Get unique token IDs from logs
-                        const potentialTokens = new Set();
-                        for (const log of logs) {
-                            const tokenId = parseInt(log.topics[3], 16);
-                            potentialTokens.add(tokenId);
-                        }
-                        
-                        console.log(`${col.name}: Checking ${potentialTokens.size} potential tokens...`);
-                        
-                        // Check current ownership
-                        let found = 0;
-                        for (const tokenId of potentialTokens) {
-                            if (found >= count) break;
-                            try {
-                                const owner = await contract.ownerOf(tokenId);
-                                if (owner.toLowerCase() === userAddress.toLowerCase()) {
-                                    userNfts[col.address].push(tokenId);
-                                    allNfts.push({
-                                        collection: col,
-                                        tokenId: tokenId
-                                    });
-                                    found++;
-                                    console.log(`Found owned NFT: ${col.name} #${tokenId}`);
-                                }
-                            } catch {
-                                // Token might be burned or error
-                            }
-                        }
-                    } catch (eventErr) {
-                        console.log(`${col.name}: Event log query failed, trying metadata fallback...`);
-                        // Final fallback: check tokens from metadata in parallel batches
-                        const metadata = collectionMetadata[col.address];
-                        if (metadata) {
-                            const tokenIds = Object.keys(metadata).map(id => parseInt(id));
-                            let found = 0;
-                            const batchSize = 50; // Check 50 at a time
-                            console.log(`${col.name}: Scanning ${tokenIds.length} tokens for ${count} owned...`);
-                            
-                            for (let i = 0; i < tokenIds.length && found < count; i += batchSize) {
-                                const batch = tokenIds.slice(i, i + batchSize);
-                                const results = await Promise.all(
-                                    batch.map(async (tokenId) => {
-                                        try {
-                                            const owner = await contract.ownerOf(tokenId);
-                                            return { tokenId, owned: owner.toLowerCase() === userAddress.toLowerCase() };
-                                        } catch {
-                                            return { tokenId, owned: false };
-                                        }
-                                    })
-                                );
-                                
-                                for (const result of results) {
-                                    if (result.owned && found < count) {
-                                        userNfts[col.address].push(result.tokenId);
-                                        allNfts.push({
-                                            collection: col,
-                                            tokenId: result.tokenId
-                                        });
-                                        found++;
-                                        console.log(`Found owned NFT: ${col.name} #${result.tokenId} (${found}/${count})`);
-                                    }
-                                }
-                                
-                                if ((i + batchSize) % 500 === 0) {
-                                    console.log(`${col.name}: Checked ${Math.min(i + batchSize, tokenIds.length)}/${tokenIds.length}...`);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (err) {
-            console.error(`Error loading NFTs from ${col.name}:`, err);
-        }
-    }
-    
-    console.log('Total NFTs found:', allNfts.length);
-    
-    // Also get staked NFTs to show them with "STAKED" label
-    let stakedNftsList = [];
-    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
-        try {
-            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
-            for (const col of COLLECTIONS) {
-                const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
-                for (const tokenId of stakedTokens) {
-                    stakedNftsList.push({
-                        collection: col,
-                        tokenId: tokenId.toNumber(),
-                        isStaked: true,
-                        isListed: false
-                    });
-                }
-            }
-        } catch (err) {
-            console.error('Error loading staked NFTs for My NFTs tab:', err);
-        }
-    }
-    
-    // Also get listed NFTs from marketplace (they're in escrow)
-    let listedNftsList = [];
-    if (CONTRACTS.marketplace !== '0x0000000000000000000000000000000000000000') {
-        try {
-            const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
-            
-            // Use event logs to find user's listings
-            const listedFilter = {
-                address: CONTRACTS.marketplace,
-                topics: [
-                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                    null, // collection (any)
-                    null, // tokenId (any)
-                    ethers.utils.hexZeroPad(userAddress, 32) // seller (user)
-                ],
-                fromBlock: 0,
-                toBlock: 'latest'
-            };
-            
-            const logs = await provider.getLogs(listedFilter);
-            console.log(`Found ${logs.length} listing events for user`);
-            
-            // Check each listing to see if still active
-            for (const log of logs) {
-                try {
-                    const collectionAddress = '0x' + log.topics[1].slice(26);
-                    const tokenId = parseInt(log.topics[2], 16);
-                    
-                    // Check if still listed
-                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collectionAddress, tokenId);
-                    
-                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
-                        const col = COLLECTIONS.find(c => c.address.toLowerCase() === collectionAddress.toLowerCase());
-                        if (col) {
-                            listedNftsList.push({
-                                collection: col,
-                                tokenId: tokenId,
-                                isListed: true,
-                                isStaked: false
-                            });
-                        }
-                    }
-                } catch (err) {
-                    console.log('Error checking listing:', err.message);
-                }
-            }
-            
-            console.log(`Found ${listedNftsList.length} active listings`);
-        } catch (err) {
-            console.error('Error loading listed NFTs:', err);
-        }
-    }
-    
-    // Combine wallet NFTs, staked NFTs, and listed NFTs
-    const combinedNfts = [
-        ...allNfts.map(nft => ({ ...nft, isStaked: false, isListed: false })),
-        ...stakedNftsList,
-        ...listedNftsList
+    // Combine all
+    const allNfts = [
+        ...walletNfts.map(n => ({ ...n, isStaked: false, isListed: false })),
+        ...stakedNfts.map(n => ({ ...n, isStaked: true, isListed: false })),
+        ...listedNfts.map(n => ({ ...n, isStaked: false, isListed: true }))
     ];
     
-    // Render NFTs
-    if (combinedNfts.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><p>No NFTs found in your wallet</p></div>';
+    // Render
+    if (allNfts.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No NFTs found</p></div>';
     } else {
         grid.innerHTML = '';
-        for (const nft of combinedNfts) {
-            const nftCard = createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed);
-            grid.appendChild(nftCard);
+        for (const nft of allNfts) {
+            grid.appendChild(createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed));
         }
+    }
+}
+
+async function loadWalletNfts() {
+    const results = [];
+    
+    // Query all collections in parallel
+    const collectionPromises = COLLECTIONS.map(async (col) => {
+        const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
+        const nfts = [];
+        
+        try {
+            const balance = await contract.balanceOf(userAddress);
+            if (balance.eq(0)) return nfts;
+            
+            // Try enumerable - parallel fetch all at once
+            try {
+                const indices = Array.from({ length: Math.min(balance.toNumber(), 100) }, (_, i) => i);
+                const tokens = await Promise.all(
+                    indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
+                );
+                for (const tokenId of tokens) {
+                    if (tokenId) {
+                        const id = tokenId.toNumber();
+                        userNfts[col.address].push(id);
+                        nfts.push({ collection: col, tokenId: id });
+                    }
+                }
+            } catch {
+                // Not enumerable - use transfer events
+                const logs = await provider.getLogs({
+                    address: col.address,
+                    topics: [
+                        ethers.utils.id('Transfer(address,address,uint256)'),
+                        null,
+                        ethers.utils.hexZeroPad(userAddress, 32)
+                    ],
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+                
+                const potentialTokens = [...new Set(logs.map(l => parseInt(l.topics[3], 16)))];
+                const owners = await Promise.all(
+                    potentialTokens.map(id => contract.ownerOf(id).catch(() => null))
+                );
+                
+                potentialTokens.forEach((tokenId, i) => {
+                    if (owners[i] && owners[i].toLowerCase() === userAddress.toLowerCase()) {
+                        userNfts[col.address].push(tokenId);
+                        nfts.push({ collection: col, tokenId });
+                    }
+                });
+            }
+        } catch (err) {
+            console.error(`Error loading ${col.name}:`, err.message);
+        }
+        
+        return nfts;
+    });
+    
+    const allResults = await Promise.all(collectionPromises);
+    return allResults.flat();
+}
+
+async function loadStakedNftsForUser() {
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') return [];
+    
+    const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
+    const results = [];
+    
+    // Query all collections in parallel
+    const stakedPromises = COLLECTIONS.map(async (col) => {
+        try {
+            const tokens = await stakingContract.getStakedTokens(userAddress, col.address);
+            return tokens.map(t => ({ collection: col, tokenId: t.toNumber() }));
+        } catch {
+            return [];
+        }
+    });
+    
+    const allResults = await Promise.all(stakedPromises);
+    return allResults.flat();
+}
+
+async function loadListedNftsForUser() {
+    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return [];
+    
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    
+    try {
+        // Get listing events for user
+        const logs = await provider.getLogs({
+            address: CONTRACTS.marketplace,
+            topics: [
+                ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                null, null,
+                ethers.utils.hexZeroPad(userAddress, 32)
+            ],
+            fromBlock: 0,
+            toBlock: 'latest'
+        });
+        
+        // Get unique collection+tokenId pairs
+        const uniqueListings = new Map();
+        for (const log of logs) {
+            const collectionAddress = '0x' + log.topics[1].slice(26);
+            const tokenId = parseInt(log.topics[2], 16);
+            const key = `${collectionAddress.toLowerCase()}-${tokenId}`;
+            uniqueListings.set(key, { collectionAddress, tokenId });
+        }
+        
+        // Check all unique listings in parallel
+        const listingChecks = [...uniqueListings.values()].map(async ({ collectionAddress, tokenId }) => {
+            try {
+                const [seller, , , active] = await marketplace.getListing(collectionAddress, tokenId);
+                if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                    const col = COLLECTIONS.find(c => c.address.toLowerCase() === collectionAddress.toLowerCase());
+                    if (col) return { collection: col, tokenId };
+                }
+            } catch {}
+            return null;
+        });
+        
+        const checked = await Promise.all(listingChecks);
+        return checked.filter(Boolean);
+    } catch (err) {
+        console.error('Error loading listings:', err.message);
+        return [];
     }
 }
 
@@ -623,19 +548,19 @@ function switchTab(tab) {
 
 // ==================== COLLECTION VIEW ====================
 let collectionLoadOffset = 0;
-let collectionViewMode = 'all'; // 'all' or 'listings'
+let collectionViewMode = 'all';
+let isLoadingMore = false;
+let collectionObserver = null;
 
 function openCollectionView(collection) {
     currentCollectionView = collection;
     collectionLoadOffset = 0;
     collectionViewMode = 'all';
+    isLoadingMore = false;
     
     const grid = document.getElementById('collectionsGrid');
-    
-    // Change parent to block display for proper layout
     grid.style.display = 'block';
     
-    // Create collection detail view
     grid.innerHTML = `
         <div class="collection-detail-view">
             <div class="collection-detail-header">
@@ -660,32 +585,33 @@ function openCollectionView(collection) {
                 </div>
                 <input type="text" placeholder="Jump to ID..." class="search-input" id="nftSearchInput">
                 <button class="jump-btn" onclick="jumpToTokenId()">Go</button>
-                <select id="nftSortSelect">
-                    <option value="id-asc">ID: Low to High</option>
-                    <option value="id-desc">ID: High to Low</option>
-                </select>
             </div>
             <div class="collection-nfts-grid" id="collectionNftsGrid">
-                <div class="empty-state"><p>Loading NFTs...</p></div>
+                <div class="empty-state"><p>Loading...</p></div>
             </div>
-            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
-                <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreNfts()">Load More</button>
-            </div>
+            <div id="scrollSentinel" style="height: 1px;"></div>
         </div>
     `;
     
-    // Load NFTs for this collection
     loadCollectionNfts(collection);
+    setupInfiniteScroll();
     
-    // Setup enter key for search
     document.getElementById('nftSearchInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') jumpToTokenId();
     });
+}
+
+function setupInfiniteScroll() {
+    if (collectionObserver) collectionObserver.disconnect();
     
-    // Setup sort
-    document.getElementById('nftSortSelect').addEventListener('change', (e) => {
-        sortCollectionNfts(collection, e.target.value);
-    });
+    collectionObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore && collectionViewMode === 'all') {
+            loadMoreNfts();
+        }
+    }, { rootMargin: '200px' });
+    
+    const sentinel = document.getElementById('scrollSentinel');
+    if (sentinel) collectionObserver.observe(sentinel);
 }
 
 function switchCollectionView(mode) {
@@ -709,56 +635,46 @@ async function jumpToTokenId() {
         return;
     }
     
-    // Open the NFT modal directly
     openNftModal(currentCollectionView, tokenId, false, null);
 }
 
 function closeCollectionView() {
+    if (collectionObserver) collectionObserver.disconnect();
     currentCollectionView = null;
     loadCollections();
 }
 
 async function loadCollectionNfts(collection, append = false) {
     const grid = document.getElementById('collectionNftsGrid');
-    const loadMoreContainer = document.getElementById('loadMoreContainer');
     const metadata = collectionMetadata[collection.address];
     
-    if (!append) {
-        grid.innerHTML = '';
-    }
+    if (!append) grid.innerHTML = '';
     
     if (collectionViewMode === 'listings') {
-        // Load only listed NFTs
         await loadListedNfts(collection, grid);
-        loadMoreContainer.style.display = 'none';
         return;
     }
     
     if (!metadata) {
         grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
-        loadMoreContainer.style.display = 'none';
         return;
     }
     
-    // Show NFTs with pagination
     const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
     const pageSize = 100;
     const tokenIds = allTokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
     
+    if (tokenIds.length === 0) return;
+    
     for (const tokenId of tokenIds) {
         const nftData = metadata[tokenId];
-        
         const card = document.createElement('div');
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
         
-        // Use thumbnail URI if available (PNG), otherwise use art from metadata
-        let imageUrl;
-        if (collection.thumbnailUri) {
-            imageUrl = collection.thumbnailUri + tokenId + '.png';
-        } else {
-            imageUrl = nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png';
-        }
+        let imageUrl = collection.thumbnailUri 
+            ? collection.thumbnailUri + tokenId + '.png'
+            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
         
         card.innerHTML = `
             <div class="nft-image">
@@ -773,33 +689,21 @@ async function loadCollectionNfts(collection, append = false) {
         
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
-        
         grid.appendChild(card);
     }
     
     collectionLoadOffset += pageSize;
-    
-    // Show/hide load more button
-    if (collectionLoadOffset < allTokenIds.length) {
-        loadMoreContainer.style.display = 'flex';
-        document.getElementById('loadMoreBtn').textContent = `Load More (${allTokenIds.length - collectionLoadOffset} remaining)`;
-    } else {
-        loadMoreContainer.style.display = 'none';
-    }
 }
 
 async function loadMoreNfts() {
-    const btn = document.getElementById('loadMoreBtn');
-    btn.textContent = 'Loading...';
-    btn.disabled = true;
-    
+    if (isLoadingMore || !currentCollectionView) return;
+    isLoadingMore = true;
     await loadCollectionNfts(currentCollectionView, true);
-    
-    btn.disabled = false;
+    isLoadingMore = false;
 }
 
 async function loadListedNfts(collection, grid) {
-    grid.innerHTML = '<div class="empty-state"><p>Scanning for listings...</p></div>';
+    grid.innerHTML = '<div class="empty-state"><p>Scanning listings...</p></div>';
     
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
     const metadata = collectionMetadata[collection.address];
@@ -809,32 +713,30 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
-    const listings = [];
-    const tokenIds = Object.keys(metadata).map(id => parseInt(id));
+    // Get all Listed events for this collection
+    const logs = await provider.getLogs({
+        address: CONTRACTS.marketplace,
+        topics: [
+            ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+            ethers.utils.hexZeroPad(collection.address, 32)
+        ],
+        fromBlock: 0,
+        toBlock: 'latest'
+    });
     
-    // Check in batches
-    const batchSize = 50;
-    for (let i = 0; i < tokenIds.length; i += batchSize) {
-        const batch = tokenIds.slice(i, i + batchSize);
-        const results = await Promise.all(
-            batch.map(async (tokenId) => {
-                try {
-                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
-                    if (active) {
-                        return { tokenId, seller, priceSGB, pricePOND };
-                    }
-                } catch {}
-                return null;
-            })
-        );
-        for (const r of results) {
-            if (r) listings.push(r);
-        }
-        
-        // Update progress
-        grid.innerHTML = `<div class="empty-state"><p>Scanning... ${Math.min(i + batchSize, tokenIds.length)}/${tokenIds.length}</p></div>`;
-    }
+    // Get unique token IDs (deduplicate)
+    const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
     
+    // Check all in parallel
+    const results = await Promise.all(tokenIds.map(async (tokenId) => {
+        try {
+            const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+            if (active) return { tokenId, seller, priceSGB, pricePOND };
+        } catch {}
+        return null;
+    }));
+    
+    const listings = results.filter(Boolean);
     grid.innerHTML = '';
     
     if (listings.length === 0) {
@@ -846,18 +748,12 @@ async function loadListedNfts(collection, grid) {
         const tokenId = listing.tokenId;
         const nftData = metadata[tokenId];
         
-        let imageUrl;
-        if (collection.thumbnailUri) {
-            imageUrl = collection.thumbnailUri + tokenId + '.png';
-        } else {
-            imageUrl = nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png';
-        }
+        let imageUrl = collection.thumbnailUri
+            ? collection.thumbnailUri + tokenId + '.png'
+            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
         
-        // Format price
         let priceText = '';
-        if (listing.priceSGB.gt(0)) {
-            priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
-        }
+        if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
         if (listing.pricePOND.gt(0)) {
             if (priceText) priceText += ' / ';
             priceText += formatNumber(parseFloat(ethers.utils.formatEther(listing.pricePOND))) + ' POND';
@@ -881,7 +777,6 @@ async function loadListedNfts(collection, grid) {
         
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
-        
         grid.appendChild(card);
     }
 }
