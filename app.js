@@ -227,7 +227,7 @@ function createCollectionCard(collection) {
                     <span class="col-stat-label">Volume</span>
                 </div>
             </div>
-            <div class="multiplier-badge">+${collection.multiplier}% LP Multiplier</div>
+            <div class="multiplier-badge">🔥 LP Boost Eligible</div>
         </div>
     `;
     
@@ -403,32 +403,39 @@ async function loadStakedNfts() {
     if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
         document.getElementById('myStakedCount').textContent = '0';
         document.getElementById('myMultiplier').textContent = '1.0x';
+        document.getElementById('stakingRewards').textContent = '0 POND';
         return;
     }
     
     try {
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
         
-        let totalStaked = 0;
-        let totalMultiplier = 100; // Base 1.0x = 100%
+        // Get user stats from contract
+        const stats = await stakingContract.getUserStats(userAddress);
+        const totalStaked = stats.totalStaked.toNumber();
+        const pendingPond = parseFloat(ethers.utils.formatEther(stats.pendingPond));
         
+        // Multiplier: base 1.0x + 0.001x per NFT (1 basis point), capped at +1.0x
+        const nftBonus = Math.min(totalStaked, 1000); // Cap at 1000
+        const multiplier = 1.0 + (nftBonus * 0.001);
+        
+        document.getElementById('myStakedCount').textContent = totalStaked;
+        document.getElementById('myMultiplier').textContent = multiplier.toFixed(2) + 'x';
+        document.getElementById('stakingRewards').textContent = pendingPond.toFixed(2) + ' POND';
+        
+        // Load staked tokens for grid
         const grid = document.getElementById('stakedNftsGrid');
         grid.innerHTML = '';
         
         for (const col of COLLECTIONS) {
             const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
             stakedNfts[col.address] = stakedTokens.map(t => t.toNumber());
-            totalStaked += stakedTokens.length;
-            totalMultiplier += stakedTokens.length * col.multiplier;
             
             for (const tokenId of stakedNfts[col.address]) {
                 const nftCard = createNftCard(col, tokenId, true);
                 grid.appendChild(nftCard);
             }
         }
-        
-        document.getElementById('myStakedCount').textContent = totalStaked;
-        document.getElementById('myMultiplier').textContent = (totalMultiplier / 100).toFixed(1) + 'x';
         
         if (totalStaked === 0) {
             grid.innerHTML = '<div class="empty-state"><p>No NFTs staked yet</p></div>';
@@ -545,7 +552,7 @@ function openCollectionView(collection) {
                         <p>${collection.description}</p>
                         <div class="collection-detail-stats">
                             <span>${formatNumber(collection.supply)} items</span>
-                            <span class="multiplier-badge">+${collection.multiplier}% LP Multiplier</span>
+                            <span class="multiplier-badge">🔥 LP Boost Eligible</span>
                         </div>
                     </div>
                 </div>
@@ -757,13 +764,14 @@ async function stakeNft(collectionAddress, tokenId) {
         const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
         
         if (!isApproved) {
+            showToast('Approving NFT collection...');
             const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
             await approveTx.wait();
         }
         
-        // Stake
+        // Stake single NFT
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.stake(collectionAddress, [tokenId]);
+        const tx = await stakingContract.stake(collectionAddress, tokenId);
         await tx.wait();
         
         showToast('NFT staked successfully!');
@@ -784,7 +792,7 @@ async function unstakeNft(collectionAddress, tokenId) {
         showToast('Unstaking NFT...');
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.unstake(collectionAddress, [tokenId]);
+        const tx = await stakingContract.unstake(collectionAddress, tokenId);
         await tx.wait();
         
         showToast('NFT unstaked successfully!');
@@ -809,12 +817,64 @@ async function stakeAllNfts() {
         return;
     }
     
-    showToast('Stake All coming soon');
+    try {
+        showToast('Staking all NFTs...');
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        
+        for (const col of COLLECTIONS) {
+            const tokens = userNfts[col.address] || [];
+            if (tokens.length === 0) continue;
+            
+            // Approve if needed
+            const nftContract = new ethers.Contract(col.address, ERC721_ABI, signer);
+            const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
+            
+            if (!isApproved) {
+                showToast(`Approving ${col.name}...`);
+                const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
+                await approveTx.wait();
+            }
+            
+            // Stake batch
+            showToast(`Staking ${tokens.length} ${col.name}...`);
+            const tx = await stakingContract.stakeBatch(col.address, tokens);
+            await tx.wait();
+        }
+        
+        showToast('All NFTs staked!');
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Stake all failed:', err);
+        showToast('Staking failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
 async function unstakeAllNfts() {
     if (!isConnected) return;
-    showToast('Unstake All coming soon');
+    
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        showToast('Staking contract coming soon', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Unstaking all NFTs...');
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const tx = await stakingContract.unstakeAll();
+        await tx.wait();
+        
+        showToast('All NFTs unstaked!');
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Unstake all failed:', err);
+        showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
 async function claimStakingRewards() {
