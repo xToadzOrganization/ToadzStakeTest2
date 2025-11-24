@@ -720,7 +720,7 @@ async function loadMoreNfts() {
 }
 
 async function loadListedNfts(collection, grid) {
-    grid.innerHTML = '<div class="empty-state"><p>Scanning listings...</p></div>';
+    grid.innerHTML = '<div class="empty-state"><p>Loading listings...</p></div>';
     
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
     const metadata = collectionMetadata[collection.address];
@@ -730,30 +730,44 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
-    // Get all Listed events for this collection
+    // Get all Listed events for this collection (recent blocks for speed)
+    const currentBlock = await provider.getBlockNumber();
+    const fromBlock = Math.max(0, currentBlock - 500000); // Last ~500k blocks
+    
     const logs = await provider.getLogs({
         address: CONTRACTS.marketplace,
         topics: [
             ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
             ethers.utils.hexZeroPad(collection.address, 32)
         ],
-        fromBlock: 0,
+        fromBlock,
         toBlock: 'latest'
     });
     
     // Get unique token IDs (deduplicate)
     const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
     
-    // Check all in parallel
-    const results = await Promise.all(tokenIds.map(async (tokenId) => {
-        try {
-            const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
-            if (active) return { tokenId, seller, priceSGB, pricePOND };
-        } catch {}
-        return null;
-    }));
+    if (tokenIds.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No listings found</p></div>';
+        return;
+    }
     
-    const listings = results.filter(Boolean);
+    // Check all in parallel with batching to avoid rate limits
+    const batchSize = 30;
+    const listings = [];
+    
+    for (let i = 0; i < tokenIds.length; i += batchSize) {
+        const batch = tokenIds.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map(async (tokenId) => {
+            try {
+                const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+                if (active) return { tokenId, seller, priceSGB, pricePOND };
+            } catch {}
+            return null;
+        }));
+        listings.push(...results.filter(Boolean));
+    }
+    
     grid.innerHTML = '';
     
     if (listings.length === 0) {
