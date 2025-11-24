@@ -336,25 +336,42 @@ async function loadUserNfts() {
                         }
                     } catch (eventErr) {
                         console.log(`${col.name}: Event log query failed, trying metadata fallback...`);
-                        // Final fallback: check tokens from metadata
+                        // Final fallback: check tokens from metadata in parallel batches
                         const metadata = collectionMetadata[col.address];
                         if (metadata) {
-                            const tokenIds = Object.keys(metadata);
+                            const tokenIds = Object.keys(metadata).map(id => parseInt(id));
                             let found = 0;
-                            for (const tokenIdStr of tokenIds) {
-                                if (found >= count) break;
-                                const tokenId = parseInt(tokenIdStr);
-                                try {
-                                    const owner = await contract.ownerOf(tokenId);
-                                    if (owner.toLowerCase() === userAddress.toLowerCase()) {
-                                        userNfts[col.address].push(tokenId);
+                            const batchSize = 50; // Check 50 at a time
+                            console.log(`${col.name}: Scanning ${tokenIds.length} tokens for ${count} owned...`);
+                            
+                            for (let i = 0; i < tokenIds.length && found < count; i += batchSize) {
+                                const batch = tokenIds.slice(i, i + batchSize);
+                                const results = await Promise.all(
+                                    batch.map(async (tokenId) => {
+                                        try {
+                                            const owner = await contract.ownerOf(tokenId);
+                                            return { tokenId, owned: owner.toLowerCase() === userAddress.toLowerCase() };
+                                        } catch {
+                                            return { tokenId, owned: false };
+                                        }
+                                    })
+                                );
+                                
+                                for (const result of results) {
+                                    if (result.owned && found < count) {
+                                        userNfts[col.address].push(result.tokenId);
                                         allNfts.push({
                                             collection: col,
-                                            tokenId: tokenId
+                                            tokenId: result.tokenId
                                         });
                                         found++;
+                                        console.log(`Found owned NFT: ${col.name} #${result.tokenId} (${found}/${count})`);
                                     }
-                                } catch {}
+                                }
+                                
+                                if ((i + batchSize) % 500 === 0) {
+                                    console.log(`${col.name}: Checked ${Math.min(i + batchSize, tokenIds.length)}/${tokenIds.length}...`);
+                                }
                             }
                         }
                     }
