@@ -16,8 +16,8 @@ const CONTRACTS = {
     luxuryLofts: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8',
     songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
     
-    // NFT Staking Contract (TODO: update after deployment)
-    nftStaking: '0x0000000000000000000000000000000000000000',
+    // NFT Staking Contract
+    nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
     
     // Marketplace Contract
     marketplace: '0x0d528f610F01C6811B7E5f782C21FB2B10A5bd92'
