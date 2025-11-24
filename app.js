@@ -30,7 +30,18 @@ async function loadCollectionMetadata() {
             try {
                 const response = await fetch(col.jsonFile);
                 if (response.ok) {
-                    collectionMetadata[col.address] = await response.json();
+                    let data = await response.json();
+                    
+                    // Convert array format to object format if needed
+                    if (Array.isArray(data)) {
+                        const obj = {};
+                        for (const item of data) {
+                            obj[item.id] = item;
+                        }
+                        data = obj;
+                    }
+                    
+                    collectionMetadata[col.address] = data;
                 }
             } catch (err) {
                 console.log(`Could not load metadata for ${col.name}:`, err.message);
@@ -198,9 +209,6 @@ function createCollectionCard(collection) {
         <div class="collection-banner">
             <img src="${collection.image}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
         </div>
-        <div class="collection-avatar">
-            <img src="${collection.image}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
-        </div>
         <div class="collection-info">
             <div class="collection-name">${collection.name}</div>
             <div class="collection-desc">${collection.description}</div>
@@ -240,11 +248,16 @@ async function loadUserNfts() {
     userNfts = {};
     let allNfts = [];
     
+    console.log('Loading NFTs for wallet:', userAddress);
+    
     for (const col of COLLECTIONS) {
         try {
+            console.log(`Checking ${col.name}...`);
             const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
             const balance = await contract.balanceOf(userAddress);
             const count = balance.toNumber();
+            
+            console.log(`${col.name}: balance = ${count}`);
             
             userNfts[col.address] = [];
             
@@ -255,6 +268,7 @@ async function loadUserNfts() {
                     await contract.tokenOfOwnerByIndex(userAddress, 0);
                 } catch {
                     useEnumerable = false;
+                    console.log(`${col.name}: Not enumerable, using fallback`);
                 }
                 
                 if (useEnumerable) {
@@ -275,6 +289,7 @@ async function loadUserNfts() {
                 } else {
                     // Fallback: Use cached JSON metadata and check ownership
                     const metadata = collectionMetadata[col.address];
+                    console.log(`${col.name}: Metadata loaded:`, !!metadata, metadata ? Object.keys(metadata).length : 0, 'tokens');
                     if (metadata) {
                         // Sample check - check ownership of tokens from metadata
                         const tokenIds = Object.keys(metadata).slice(0, Math.min(1000, count * 2));
@@ -292,6 +307,7 @@ async function loadUserNfts() {
                                         tokenId: tokenId
                                     });
                                     found++;
+                                    console.log(`Found owned NFT: ${col.name} #${tokenId}`);
                                 }
                             } catch {
                                 // Token doesn't exist or error
@@ -304,6 +320,8 @@ async function loadUserNfts() {
             console.error(`Error loading NFTs from ${col.name}:`, err);
         }
     }
+    
+    console.log('Total NFTs found:', allNfts.length);
     
     // Render NFTs
     if (allNfts.length === 0) {
@@ -405,10 +423,20 @@ function createNftCard(collection, tokenId, isStaked) {
         }
     }
     
+    // Check if it's a video
+    const isVideo = imageUrl && (imageUrl.endsWith('.mp4') || imageUrl.endsWith('.webm'));
+    
+    let mediaHtml;
+    if (isVideo) {
+        mediaHtml = `<video src="${imageUrl}" autoplay loop muted playsinline></video>`;
+    } else {
+        mediaHtml = `<img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
+             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">`;
+    }
+    
     card.innerHTML = `
         <div class="nft-image">
-            <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
-                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+            ${mediaHtml}
             ${isStaked ? '<div class="staked-badge">STAKED</div>' : ''}
         </div>
         <div class="nft-info">
@@ -525,11 +553,19 @@ async function loadCollectionNfts(collection) {
         card.dataset.tokenId = tokenId;
         
         const imageUrl = nftData.art || nftData.image || collection.baseUri + tokenId + '.png';
+        const isVideo = imageUrl && (imageUrl.endsWith('.mp4') || imageUrl.endsWith('.webm'));
+        
+        let mediaHtml;
+        if (isVideo) {
+            mediaHtml = `<video src="${imageUrl}" autoplay loop muted playsinline></video>`;
+        } else {
+            mediaHtml = `<img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">`;
+        }
         
         card.innerHTML = `
             <div class="nft-image">
-                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
-                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+                ${mediaHtml}
             </div>
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
