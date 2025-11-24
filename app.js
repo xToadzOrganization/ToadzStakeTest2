@@ -376,12 +376,19 @@ async function loadWalletNfts() {
             
             // Try enumerable - parallel fetch all at once
             try {
-                const indices = Array.from({ length: Math.min(balance.toNumber(), 100) }, (_, i) => i);
-                const tokens = await Promise.all(
-                    indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
-                );
-                for (const tokenId of tokens) {
-                    if (tokenId) {
+                // Test if enumerable is supported first
+                const testToken = await contract.tokenOfOwnerByIndex(userAddress, 0);
+                const firstId = testToken.toNumber();
+                userNfts[col.address].push(firstId);
+                nfts.push({ collection: col, tokenId: firstId });
+                
+                // If more than 1, get the rest
+                if (balance.gt(1)) {
+                    const indices = Array.from({ length: Math.min(balance.toNumber(), 100) - 1 }, (_, i) => i + 1);
+                    const tokens = await Promise.all(
+                        indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i))
+                    );
+                    for (const tokenId of tokens) {
                         const id = tokenId.toNumber();
                         userNfts[col.address].push(id);
                         nfts.push({ collection: col, tokenId: id });
