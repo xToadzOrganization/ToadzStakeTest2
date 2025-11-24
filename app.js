@@ -17,9 +17,21 @@ async function init() {
     await loadCollectionMetadata();
     await loadCollections();
     
+    // Handle URL hash routing
+    handleHashRoute();
+    window.addEventListener('hashchange', handleHashRoute);
+    
     // Check if already connected
     if (window.ethereum && window.ethereum.selectedAddress) {
         await connectWallet();
+    }
+}
+
+function handleHashRoute() {
+    const hash = window.location.hash.slice(1); // Remove #
+    const validTabs = ['collections', 'my-nfts', 'staking', 'lp', 'governance'];
+    if (hash && validTabs.includes(hash)) {
+        switchTab(hash, false); // false = don't update hash again
     }
 }
 
@@ -526,7 +538,7 @@ function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed
 }
 
 // ==================== TAB SWITCHING ====================
-function switchTab(tab) {
+function switchTab(tab, updateHash = true) {
     // If viewing a collection and switching to collections, go back to main view
     if (tab === 'collections' && currentCollectionView) {
         closeCollectionView();
@@ -534,6 +546,11 @@ function switchTab(tab) {
     }
     
     currentTab = tab;
+    
+    // Update URL hash
+    if (updateHash) {
+        history.pushState(null, '', `#${tab}`);
+    }
     
     // Update nav buttons
     document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
