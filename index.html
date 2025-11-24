@@ -166,7 +166,7 @@
             <div class="lp-container">
                 <div class="lp-header">
                     <h2>Universal Liquidity Pool</h2>
-                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from activity across all Toadz platforms.</p>
+                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from all platform activity.</p>
                 </div>
                 
                 <div class="lp-info-grid">
@@ -280,29 +280,39 @@
 
     <!-- Listing Modal -->
     <div class="modal-overlay" id="listingModal">
-        <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-content listing-modal">
             <button class="modal-close" onclick="closeListingModal()">×</button>
-            <div class="modal-body" style="padding: 24px;">
-                <h2 style="margin-bottom: 8px;">List NFT for Sale</h2>
-                <p id="listingNftName" style="color: var(--text-muted); margin-bottom: 24px;">NFT #123</p>
-                
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in SGB (leave empty to not accept)</label>
-                    <input type="number" id="listingPriceSGB" placeholder="0.00" step="0.01" min="0" 
-                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+            <div class="listing-modal-body">
+                <div class="listing-modal-header">
+                    <h2>List NFT for Sale</h2>
+                    <p id="listingNftName">NFT #123</p>
                 </div>
                 
-                <div style="margin-bottom: 24px;">
-                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in POND (leave empty to not accept)</label>
-                    <input type="number" id="listingPricePOND" placeholder="0.00" step="1" min="0"
-                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+                <div class="listing-input-group">
+                    <label>Price in SGB</label>
+                    <div class="listing-input-wrap">
+                        <input type="number" id="listingPriceSGB" placeholder="0.00" step="0.01" min="0">
+                        <span class="input-suffix">SGB</span>
+                    </div>
+                    <span class="input-hint">Leave empty to not accept SGB</span>
                 </div>
                 
-                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">5% fee on sales. Set at least one price.</p>
+                <div class="listing-input-group">
+                    <label>Price in POND</label>
+                    <div class="listing-input-wrap">
+                        <input type="number" id="listingPricePOND" placeholder="0" step="1" min="0">
+                        <span class="input-suffix">POND</span>
+                    </div>
+                    <span class="input-hint">Leave empty to not accept POND</span>
+                </div>
                 
-                <div style="display: flex; gap: 12px;">
-                    <button class="modal-btn secondary" onclick="closeListingModal()" style="flex: 1;">Cancel</button>
-                    <button class="modal-btn primary" id="confirmListingBtn" onclick="confirmListing()" style="flex: 1;">List NFT</button>
+                <div class="listing-fee-note">
+                    <span>🔥</span> 5% marketplace fee on sales
+                </div>
+                
+                <div class="listing-actions">
+                    <button class="modal-btn secondary" onclick="closeListingModal()">Cancel</button>
+                    <button class="modal-btn primary" id="confirmListingBtn" onclick="confirmListing()">List for Sale</button>
                 </div>
             </div>
         </div>
