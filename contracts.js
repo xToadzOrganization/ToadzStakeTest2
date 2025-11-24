@@ -17,7 +17,7 @@ const CONTRACTS = {
     songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
     
     // NFT Staking Contract (TODO: update after deployment)
-    nftStaking: '0x0000000000000000000000000000000000000000',
+    nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
     
     // Marketplace Contract (TODO: deploy)
     marketplace: '0x0000000000000000000000000000000000000000'
