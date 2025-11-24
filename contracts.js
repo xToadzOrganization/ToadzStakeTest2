@@ -33,6 +33,7 @@ const COLLECTIONS = [
         description: 'The original toad collection on Songbird. Stake for 10% LP multiplier per NFT.',
         image: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/1.png',
         baseUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         multiplier: 10,
         featured: true,
         jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
