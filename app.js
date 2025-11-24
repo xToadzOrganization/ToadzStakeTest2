@@ -395,7 +395,8 @@ async function loadUserNfts() {
                     stakedNftsList.push({
                         collection: col,
                         tokenId: tokenId.toNumber(),
-                        isStaked: true
+                        isStaked: true,
+                        isListed: false
                     });
                 }
             }
@@ -404,10 +405,49 @@ async function loadUserNfts() {
         }
     }
     
-    // Combine wallet NFTs and staked NFTs
+    // Also get listed NFTs from marketplace (they're in escrow)
+    let listedNftsList = [];
+    if (CONTRACTS.marketplace !== '0x0000000000000000000000000000000000000000') {
+        try {
+            const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+            // Check recent listings - we need to scan for user's listings
+            // For now, check a reasonable range of token IDs the user might have listed
+            for (const col of COLLECTIONS) {
+                // Check tokens from metadata
+                const metadata = collectionMetadata[col.address];
+                if (metadata) {
+                    const tokenIds = Object.keys(metadata).map(id => parseInt(id));
+                    // Check in batches
+                    const batchSize = 20;
+                    for (let i = 0; i < Math.min(tokenIds.length, 200); i += batchSize) {
+                        const batch = tokenIds.slice(i, i + batchSize);
+                        const results = await Promise.all(
+                            batch.map(async (tokenId) => {
+                                try {
+                                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
+                                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                                        return { collection: col, tokenId, isListed: true };
+                                    }
+                                } catch {}
+                                return null;
+                            })
+                        );
+                        for (const r of results) {
+                            if (r) listedNftsList.push(r);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error loading listed NFTs:', err);
+        }
+    }
+    
+    // Combine wallet NFTs, staked NFTs, and listed NFTs
     const combinedNfts = [
-        ...allNfts.map(nft => ({ ...nft, isStaked: false })),
-        ...stakedNftsList
+        ...allNfts.map(nft => ({ ...nft, isStaked: false, isListed: false })),
+        ...stakedNftsList,
+        ...listedNftsList
     ];
     
     // Render NFTs
@@ -416,7 +456,7 @@ async function loadUserNfts() {
     } else {
         grid.innerHTML = '';
         for (const nft of combinedNfts) {
-            const nftCard = createNftCard(nft.collection, nft.tokenId, nft.isStaked);
+            const nftCard = createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed);
             grid.appendChild(nftCard);
         }
     }
@@ -496,32 +536,42 @@ async function loadLpPosition() {
     }
 }
 
-function createNftCard(collection, tokenId, isStaked) {
+function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed) {
     const card = document.createElement('div');
     card.className = 'nft-card';
     
     // Use thumbnail URI if available (PNG), otherwise use art from metadata
-    let imageUrl;
-    if (collection.thumbnailUri) {
-        // Use fast PNG thumbnails
-        imageUrl = collection.thumbnailUri + tokenId + '.png';
-    } else {
-        // Get from metadata
-        const metadata = collectionMetadata[collection.address];
-        if (metadata && metadata[tokenId]) {
-            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+    let imageUrl = imageUrlOverride;
+    if (!imageUrl) {
+        if (collection.thumbnailUri) {
+            // Use fast PNG thumbnails
+            imageUrl = collection.thumbnailUri + tokenId + '.png';
+        } else {
+            // Get from metadata
+            const metadata = collectionMetadata[collection.address];
+            if (metadata && metadata[tokenId]) {
+                imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+            }
+            if (!imageUrl) {
+                // Fallback to baseUri
+                imageUrl = collection.baseUri + tokenId + '.png';
+            }
         }
-        if (!imageUrl) {
-            // Fallback to baseUri
-            imageUrl = collection.baseUri + tokenId + '.png';
-        }
+    }
+    
+    // Determine badge
+    let badge = '';
+    if (isStaked) {
+        badge = '<div class="staked-badge">STAKED</div>';
+    } else if (isListed) {
+        badge = '<div class="listed-badge">LISTED</div>';
     }
     
     card.innerHTML = `
         <div class="nft-image">
             <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
-            ${isStaked ? '<div class="staked-badge">STAKED</div>' : ''}
+            ${badge}
         </div>
         <div class="nft-info">
             <div class="nft-name">${collection.name} #${tokenId}</div>
@@ -557,8 +607,13 @@ function switchTab(tab) {
 }
 
 // ==================== COLLECTION VIEW ====================
+let collectionLoadOffset = 0;
+let collectionViewMode = 'all'; // 'all' or 'listings'
+
 function openCollectionView(collection) {
     currentCollectionView = collection;
+    collectionLoadOffset = 0;
+    collectionViewMode = 'all';
     
     const grid = document.getElementById('collectionsGrid');
     
@@ -584,16 +639,22 @@ function openCollectionView(collection) {
                 </div>
             </div>
             <div class="collection-detail-filters">
-                <input type="text" placeholder="Search by ID..." class="search-input" id="nftSearchInput">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="all" onclick="switchCollectionView('all')">All</button>
+                    <button class="view-btn" data-view="listings" onclick="switchCollectionView('listings')">Listings</button>
+                </div>
+                <input type="text" placeholder="Jump to ID..." class="search-input" id="nftSearchInput">
+                <button class="jump-btn" onclick="jumpToTokenId()">Go</button>
                 <select id="nftSortSelect">
                     <option value="id-asc">ID: Low to High</option>
                     <option value="id-desc">ID: High to Low</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
                 </select>
             </div>
             <div class="collection-nfts-grid" id="collectionNftsGrid">
                 <div class="empty-state"><p>Loading NFTs...</p></div>
+            </div>
+            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreNfts()">Load More</button>
             </div>
         </div>
     `;
@@ -601,9 +662,9 @@ function openCollectionView(collection) {
     // Load NFTs for this collection
     loadCollectionNfts(collection);
     
-    // Setup search
-    document.getElementById('nftSearchInput').addEventListener('input', (e) => {
-        filterCollectionNfts(collection, e.target.value);
+    // Setup enter key for search
+    document.getElementById('nftSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') jumpToTokenId();
     });
     
     // Setup sort
@@ -612,28 +673,65 @@ function openCollectionView(collection) {
     });
 }
 
+function switchCollectionView(mode) {
+    collectionViewMode = mode;
+    collectionLoadOffset = 0;
+    
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+    
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    loadCollectionNfts(currentCollectionView);
+}
+
+async function jumpToTokenId() {
+    const input = document.getElementById('nftSearchInput');
+    const tokenId = parseInt(input.value);
+    
+    if (isNaN(tokenId) || tokenId < 1 || tokenId > currentCollectionView.supply) {
+        showToast('Enter a valid token ID (1-' + currentCollectionView.supply + ')', 'error');
+        return;
+    }
+    
+    // Open the NFT modal directly
+    openNftModal(currentCollectionView, tokenId, false, null);
+}
+
 function closeCollectionView() {
     currentCollectionView = null;
     loadCollections();
 }
 
-async function loadCollectionNfts(collection) {
+async function loadCollectionNfts(collection, append = false) {
     const grid = document.getElementById('collectionNftsGrid');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
     const metadata = collectionMetadata[collection.address];
     
-    if (!metadata) {
-        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
+    if (!append) {
+        grid.innerHTML = '';
+    }
+    
+    if (collectionViewMode === 'listings') {
+        // Load only listed NFTs
+        await loadListedNfts(collection, grid);
+        loadMoreContainer.style.display = 'none';
         return;
     }
     
-    grid.innerHTML = '';
+    if (!metadata) {
+        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
+        loadMoreContainer.style.display = 'none';
+        return;
+    }
     
-    // Show first 100 NFTs
-    const tokenIds = Object.keys(metadata).slice(0, 100);
+    // Show NFTs with pagination
+    const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
+    const pageSize = 100;
+    const tokenIds = allTokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
     
-    for (const tokenIdStr of tokenIds) {
-        const tokenId = parseInt(tokenIdStr);
-        const nftData = metadata[tokenIdStr];
+    for (const tokenId of tokenIds) {
+        const nftData = metadata[tokenId];
         
         const card = document.createElement('div');
         card.className = 'nft-card';
@@ -644,7 +742,7 @@ async function loadCollectionNfts(collection) {
         if (collection.thumbnailUri) {
             imageUrl = collection.thumbnailUri + tokenId + '.png';
         } else {
-            imageUrl = nftData.art || nftData.image || collection.baseUri + tokenId + '.png';
+            imageUrl = nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png';
         }
         
         card.innerHTML = `
@@ -655,6 +753,114 @@ async function loadCollectionNfts(collection) {
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
                 <div class="nft-collection">${collection.symbol}</div>
+            </div>
+        `;
+        
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
+        
+        grid.appendChild(card);
+    }
+    
+    collectionLoadOffset += pageSize;
+    
+    // Show/hide load more button
+    if (collectionLoadOffset < allTokenIds.length) {
+        loadMoreContainer.style.display = 'flex';
+        document.getElementById('loadMoreBtn').textContent = `Load More (${allTokenIds.length - collectionLoadOffset} remaining)`;
+    } else {
+        loadMoreContainer.style.display = 'none';
+    }
+}
+
+async function loadMoreNfts() {
+    const btn = document.getElementById('loadMoreBtn');
+    btn.textContent = 'Loading...';
+    btn.disabled = true;
+    
+    await loadCollectionNfts(currentCollectionView, true);
+    
+    btn.disabled = false;
+}
+
+async function loadListedNfts(collection, grid) {
+    grid.innerHTML = '<div class="empty-state"><p>Scanning for listings...</p></div>';
+    
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    const metadata = collectionMetadata[collection.address];
+    
+    if (!metadata) {
+        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
+        return;
+    }
+    
+    const listings = [];
+    const tokenIds = Object.keys(metadata).map(id => parseInt(id));
+    
+    // Check in batches
+    const batchSize = 50;
+    for (let i = 0; i < tokenIds.length; i += batchSize) {
+        const batch = tokenIds.slice(i, i + batchSize);
+        const results = await Promise.all(
+            batch.map(async (tokenId) => {
+                try {
+                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+                    if (active) {
+                        return { tokenId, seller, priceSGB, pricePOND };
+                    }
+                } catch {}
+                return null;
+            })
+        );
+        for (const r of results) {
+            if (r) listings.push(r);
+        }
+        
+        // Update progress
+        grid.innerHTML = `<div class="empty-state"><p>Scanning... ${Math.min(i + batchSize, tokenIds.length)}/${tokenIds.length}</p></div>`;
+    }
+    
+    grid.innerHTML = '';
+    
+    if (listings.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
+        return;
+    }
+    
+    for (const listing of listings) {
+        const tokenId = listing.tokenId;
+        const nftData = metadata[tokenId];
+        
+        let imageUrl;
+        if (collection.thumbnailUri) {
+            imageUrl = collection.thumbnailUri + tokenId + '.png';
+        } else {
+            imageUrl = nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png';
+        }
+        
+        // Format price
+        let priceText = '';
+        if (listing.priceSGB.gt(0)) {
+            priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
+        }
+        if (listing.pricePOND.gt(0)) {
+            if (priceText) priceText += ' / ';
+            priceText += formatNumber(parseFloat(ethers.utils.formatEther(listing.pricePOND))) + ' POND';
+        }
+        
+        const card = document.createElement('div');
+        card.className = 'nft-card';
+        card.dataset.tokenId = tokenId;
+        
+        card.innerHTML = `
+            <div class="nft-image">
+                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+                <div class="listed-badge">LISTED</div>
+            </div>
+            <div class="nft-info">
+                <div class="nft-name">${collection.name} #${tokenId}</div>
+                <div class="nft-price">${priceText}</div>
             </div>
         `;
         
