@@ -211,12 +211,16 @@ async function loadCollections() {
         const card = createCollectionCard(col);
         grid.appendChild(card);
     }
+    
+    // Load floor prices in background
+    loadCollectionFloors();
 }
 
 function createCollectionCard(collection) {
     const card = document.createElement('div');
     card.className = 'collection-card';
     card.style.cursor = 'pointer';
+    card.dataset.address = collection.address;
     
     card.innerHTML = `
         <div class="collection-banner">
@@ -231,11 +235,11 @@ function createCollectionCard(collection) {
                     <span class="col-stat-label">Items</span>
                 </div>
                 <div class="col-stat">
-                    <span class="col-stat-value">--</span>
+                    <span class="col-stat-value floor-price" data-collection="${collection.address}">--</span>
                     <span class="col-stat-label">Floor</span>
                 </div>
                 <div class="col-stat">
-                    <span class="col-stat-value">--</span>
+                    <span class="col-stat-value volume-stat" data-collection="${collection.address}">--</span>
                     <span class="col-stat-label">Volume</span>
                 </div>
             </div>
@@ -247,6 +251,72 @@ function createCollectionCard(collection) {
     card.addEventListener('click', () => openCollectionView(collection));
     
     return card;
+}
+
+// Load floor prices for all collections
+async function loadCollectionFloors() {
+    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return;
+    
+    // Use read-only provider if wallet not connected
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    const currentBlock = await readProvider.getBlockNumber();
+    const fromBlock = Math.max(0, currentBlock - 500000);
+    
+    // Load overall volume stats
+    try {
+        const [volumeSGB, volumePOND, sales] = await marketplace.getStats();
+        const totalVolume = parseFloat(ethers.utils.formatEther(volumeSGB));
+        document.getElementById('totalVolume').textContent = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
+    } catch {}
+    
+    // Load total staked
+    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
+        try {
+            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+            const totalStaked = await stakingContract.totalStakedNFTs();
+            document.getElementById('totalStaked').textContent = formatNumber(totalStaked.toNumber());
+        } catch {}
+    }
+    
+    // Load floor for each collection in parallel
+    await Promise.all(COLLECTIONS.map(async (col) => {
+        try {
+            // Get listing events for this collection
+            const logs = await readProvider.getLogs({
+                address: CONTRACTS.marketplace,
+                topics: [
+                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                    ethers.utils.hexZeroPad(col.address, 32)
+                ],
+                fromBlock,
+                toBlock: 'latest'
+            });
+            
+            const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
+            
+            // Check active listings in parallel
+            const results = await Promise.all(tokenIds.slice(0, 50).map(async (tokenId) => {
+                try {
+                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
+                    if (active && priceSGB.gt(0)) {
+                        return parseFloat(ethers.utils.formatEther(priceSGB));
+                    }
+                } catch {}
+                return null;
+            }));
+            
+            const prices = results.filter(p => p !== null);
+            if (prices.length > 0) {
+                const floor = Math.min(...prices);
+                const floorEl = document.querySelector(`.floor-price[data-collection="${col.address}"]`);
+                if (floorEl) floorEl.textContent = floor.toFixed(1) + ' SGB';
+            }
+        } catch (err) {
+            console.error(`Error loading floor for ${col.name}:`, err.message);
+        }
+    }));
 }
 
 async function loadUserNfts() {
@@ -602,6 +672,12 @@ function openCollectionView(collection) {
                 </div>
                 <input type="text" placeholder="Jump to ID..." class="search-input" id="nftSearchInput">
                 <button class="jump-btn" onclick="jumpToTokenId()">Go</button>
+                <select id="listingSortSelect" onchange="sortListings(this.value)">
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="id-asc">ID: Low to High</option>
+                    <option value="id-desc">ID: High to Low</option>
+                </select>
             </div>
             <div class="collection-nfts-grid" id="collectionNftsGrid">
                 <div class="empty-state"><p>Loading...</p></div>
@@ -783,6 +859,14 @@ async function loadListedNfts(collection, grid) {
             ? collection.thumbnailUri + tokenId + '.png'
             : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
         
+        // Calculate price for sorting (use SGB if available, else POND/1000 as rough equivalent)
+        let sortPrice = 0;
+        if (listing.priceSGB.gt(0)) {
+            sortPrice = parseFloat(ethers.utils.formatEther(listing.priceSGB));
+        } else if (listing.pricePOND.gt(0)) {
+            sortPrice = parseFloat(ethers.utils.formatEther(listing.pricePOND)) / 1000;
+        }
+        
         let priceText = '';
         if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
         if (listing.pricePOND.gt(0)) {
@@ -793,6 +877,7 @@ async function loadListedNfts(collection, grid) {
         const card = document.createElement('div');
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
+        card.dataset.price = sortPrice;
         
         card.innerHTML = `
             <div class="nft-image">
@@ -810,6 +895,9 @@ async function loadListedNfts(collection, grid) {
         card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
         grid.appendChild(card);
     }
+    
+    // Default sort by price low to high
+    sortListings('price-asc');
 }
 
 function filterCollectionNfts(collection, searchTerm) {
@@ -841,6 +929,33 @@ function sortCollectionNfts(collection, sortBy) {
                 return idB - idA;
             default:
                 return idA - idB;
+        }
+    });
+    
+    cards.forEach(card => grid.appendChild(card));
+}
+
+function sortListings(sortBy) {
+    const grid = document.getElementById('collectionNftsGrid');
+    const cards = Array.from(grid.querySelectorAll('.nft-card'));
+    
+    cards.sort((a, b) => {
+        const idA = parseInt(a.dataset.tokenId);
+        const idB = parseInt(b.dataset.tokenId);
+        const priceA = parseFloat(a.dataset.price || 0);
+        const priceB = parseFloat(b.dataset.price || 0);
+        
+        switch (sortBy) {
+            case 'price-asc':
+                return priceA - priceB;
+            case 'price-desc':
+                return priceB - priceA;
+            case 'id-asc':
+                return idA - idB;
+            case 'id-desc':
+                return idB - idA;
+            default:
+                return priceA - priceB;
         }
     });
     
