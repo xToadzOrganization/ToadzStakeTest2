@@ -846,30 +846,7 @@ async function loadListedNfts(collection, grid) {
     const activeListings = listings.filter(Boolean);
     grid.innerHTML = '';
     
-    if (tokenIds.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><p>No listings found</p></div>';
-        return;
-    }
-    
-    // Check all in parallel with batching to avoid rate limits
-    const batchSize = 30;
-    const listings = [];
-    
-    for (let i = 0; i < tokenIds.length; i += batchSize) {
-        const batch = tokenIds.slice(i, i + batchSize);
-        const results = await Promise.all(batch.map(async (tokenId) => {
-            try {
-                const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
-                if (active) return { tokenId, seller, priceSGB, pricePOND };
-            } catch {}
-            return null;
-        }));
-        listings.push(...results.filter(Boolean));
-    }
-    
-    grid.innerHTML = '';
-    
-    if (listings.length === 0) {
+    if (activeListings.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
         return;
     }
