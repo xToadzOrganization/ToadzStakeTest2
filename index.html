@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toadz Marketplace | BUY TRADE EARN</title>
+    <title>Toadz Marketplace | Zero-Fee NFT Trading</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -71,7 +71,7 @@
             <!-- Featured Banner -->
             <div class="featured-banner">
                 <div class="featured-text">
-                    <h1>Buy. Stake. Earn.</h1>
+                    <h1>Zero-Fee NFT Trading</h1>
                     <p>Stake NFTs for LP multipliers. All fees flow to stakers.</p>
                 </div>
                 <div class="featured-stats">
@@ -166,7 +166,7 @@
             <div class="lp-container">
                 <div class="lp-header">
                     <h2>Universal Liquidity Pool</h2>
-                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from activity on all Toadz platforms.</p>
+                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from all platform activity.</p>
                 </div>
                 
                 <div class="lp-info-grid">
@@ -273,6 +273,36 @@
                             <!-- History populated by JS -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listing Modal -->
+    <div class="modal-overlay" id="listingModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="modal-close" onclick="closeListingModal()">×</button>
+            <div class="modal-body" style="padding: 24px;">
+                <h2 style="margin-bottom: 8px;">List NFT for Sale</h2>
+                <p id="listingNftName" style="color: var(--text-muted); margin-bottom: 24px;">NFT #123</p>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in SGB (leave empty to not accept)</label>
+                    <input type="number" id="listingPriceSGB" placeholder="0.00" step="0.01" min="0" 
+                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">Price in POND (leave empty to not accept)</label>
+                    <input type="number" id="listingPricePOND" placeholder="0.00" step="1" min="0"
+                           style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: white; font-size: 16px;">
+                </div>
+                
+                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">5% fee on sales. Set at least one price.</p>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button class="modal-btn secondary" onclick="closeListingModal()" style="flex: 1;">Cancel</button>
+                    <button class="modal-btn primary" id="confirmListingBtn" onclick="confirmListing()" style="flex: 1;">List NFT</button>
                 </div>
             </div>
         </div>
