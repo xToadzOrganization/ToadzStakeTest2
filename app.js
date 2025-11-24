@@ -289,32 +289,47 @@ async function loadCollectionFloors() {
     }
     
     const currentBlock = await readProvider.getBlockNumber();
-    // RPC limits to 30k blocks, use 25k to be safe
-    const fromBlock = Math.max(0, currentBlock - 25000);
-    console.log('Searching from block', fromBlock, 'to', currentBlock);
     
     // Load floor for each collection in parallel
     await Promise.all(COLLECTIONS.map(async (col) => {
         try {
-            // Get listing events for this collection
-            const logs = await readProvider.getLogs({
-                address: CONTRACTS.marketplace,
-                topics: [
-                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                    ethers.utils.hexZeroPad(col.address, 32)
-                ],
-                fromBlock,
-                toBlock: 'latest'
+            // Scan multiple chunks to find all historical listings
+            const allTokenIds = new Set();
+            const chunkSize = 5000;
+            const chunksToScan = 20; // ~100k blocks, roughly 2-3 days
+            
+            // Scan chunks in parallel for speed
+            const chunkPromises = [];
+            for (let i = 0; i < chunksToScan; i++) {
+                const endBlock = currentBlock - (i * chunkSize);
+                const startBlock = Math.max(0, endBlock - chunkSize);
+                if (startBlock <= 0) break;
+                
+                chunkPromises.push(
+                    readProvider.getLogs({
+                        address: CONTRACTS.marketplace,
+                        topics: [
+                            ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                            ethers.utils.hexZeroPad(col.address, 32)
+                        ],
+                        fromBlock: startBlock,
+                        toBlock: endBlock
+                    }).catch(() => [])
+                );
+            }
+            
+            const chunkResults = await Promise.all(chunkPromises);
+            chunkResults.forEach(logs => {
+                logs.forEach(l => allTokenIds.add(parseInt(l.topics[2], 16)));
             });
             
-            console.log(`${col.name}: found ${logs.length} listing events`);
+            console.log(`${col.name}: found ${allTokenIds.size} potential listings from ${chunksToScan} chunks`);
             
-            const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
-            
-            if (tokenIds.length === 0) return;
+            if (allTokenIds.size === 0) return;
             
             // Check active listings in parallel
-            const results = await Promise.all(tokenIds.slice(0, 50).map(async (tokenId) => {
+            const tokenIds = [...allTokenIds];
+            const results = await Promise.all(tokenIds.map(async (tokenId) => {
                 try {
                     const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
                     if (active && priceSGB.gt(0)) {
@@ -325,12 +340,11 @@ async function loadCollectionFloors() {
             }));
             
             const prices = results.filter(p => p !== null);
-            console.log(`${col.name}: ${prices.length} active listings, prices:`, prices);
+            console.log(`${col.name}: ${prices.length} active listings`);
             
             if (prices.length > 0) {
                 const floor = Math.min(...prices);
                 const floorEl = document.querySelector(`.floor-price[data-collection="${col.address}"]`);
-                console.log(`${col.name}: floor = ${floor}, element found:`, !!floorEl);
                 if (floorEl) floorEl.textContent = floor.toFixed(1) + ' SGB';
             }
         } catch (err) {
@@ -820,7 +834,8 @@ async function loadMoreNfts() {
 async function loadListedNfts(collection, grid) {
     grid.innerHTML = '<div class="empty-state"><p>Loading listings...</p></div>';
     
-    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
     const metadata = collectionMetadata[collection.address];
     
     if (!metadata) {
@@ -828,22 +843,38 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
-    // Get all Listed events for this collection (recent blocks for speed)
-    const currentBlock = await provider.getBlockNumber();
-    const fromBlock = Math.max(0, currentBlock - 25000); // RPC limit is 30k blocks
+    const currentBlock = await readProvider.getBlockNumber();
     
-    const logs = await provider.getLogs({
-        address: CONTRACTS.marketplace,
-        topics: [
-            ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-            ethers.utils.hexZeroPad(collection.address, 32)
-        ],
-        fromBlock,
-        toBlock: 'latest'
+    // Scan multiple chunks in parallel
+    const allTokenIds = new Set();
+    const chunkSize = 5000;
+    const chunksToScan = 20;
+    
+    const chunkPromises = [];
+    for (let i = 0; i < chunksToScan; i++) {
+        const endBlock = currentBlock - (i * chunkSize);
+        const startBlock = Math.max(0, endBlock - chunkSize);
+        if (startBlock <= 0) break;
+        
+        chunkPromises.push(
+            readProvider.getLogs({
+                address: CONTRACTS.marketplace,
+                topics: [
+                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                    ethers.utils.hexZeroPad(collection.address, 32)
+                ],
+                fromBlock: startBlock,
+                toBlock: endBlock
+            }).catch(() => [])
+        );
+    }
+    
+    const chunkResults = await Promise.all(chunkPromises);
+    chunkResults.forEach(logs => {
+        logs.forEach(l => allTokenIds.add(parseInt(l.topics[2], 16)));
     });
     
-    // Get unique token IDs (deduplicate)
-    const tokenIds = [...new Set(logs.map(l => parseInt(l.topics[2], 16)))];
+    const tokenIds = [...allTokenIds];
     
     if (tokenIds.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No listings found</p></div>';
