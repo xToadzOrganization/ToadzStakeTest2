@@ -410,34 +410,49 @@ async function loadUserNfts() {
     if (CONTRACTS.marketplace !== '0x0000000000000000000000000000000000000000') {
         try {
             const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
-            // Check recent listings - we need to scan for user's listings
-            // For now, check a reasonable range of token IDs the user might have listed
-            for (const col of COLLECTIONS) {
-                // Check tokens from metadata
-                const metadata = collectionMetadata[col.address];
-                if (metadata) {
-                    const tokenIds = Object.keys(metadata).map(id => parseInt(id));
-                    // Check in batches
-                    const batchSize = 20;
-                    for (let i = 0; i < Math.min(tokenIds.length, 200); i += batchSize) {
-                        const batch = tokenIds.slice(i, i + batchSize);
-                        const results = await Promise.all(
-                            batch.map(async (tokenId) => {
-                                try {
-                                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
-                                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
-                                        return { collection: col, tokenId, isListed: true };
-                                    }
-                                } catch {}
-                                return null;
-                            })
-                        );
-                        for (const r of results) {
-                            if (r) listedNftsList.push(r);
+            
+            // Use event logs to find user's listings
+            const listedFilter = {
+                address: CONTRACTS.marketplace,
+                topics: [
+                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
+                    null, // collection (any)
+                    null, // tokenId (any)
+                    ethers.utils.hexZeroPad(userAddress, 32) // seller (user)
+                ],
+                fromBlock: 0,
+                toBlock: 'latest'
+            };
+            
+            const logs = await provider.getLogs(listedFilter);
+            console.log(`Found ${logs.length} listing events for user`);
+            
+            // Check each listing to see if still active
+            for (const log of logs) {
+                try {
+                    const collectionAddress = '0x' + log.topics[1].slice(26);
+                    const tokenId = parseInt(log.topics[2], 16);
+                    
+                    // Check if still listed
+                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collectionAddress, tokenId);
+                    
+                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                        const col = COLLECTIONS.find(c => c.address.toLowerCase() === collectionAddress.toLowerCase());
+                        if (col) {
+                            listedNftsList.push({
+                                collection: col,
+                                tokenId: tokenId,
+                                isListed: true,
+                                isStaked: false
+                            });
                         }
                     }
+                } catch (err) {
+                    console.log('Error checking listing:', err.message);
                 }
             }
+            
+            console.log(`Found ${listedNftsList.length} active listings`);
         } catch (err) {
             console.error('Error loading listed NFTs:', err);
         }
