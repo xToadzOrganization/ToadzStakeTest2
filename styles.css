@@ -1355,8 +1355,8 @@ body {
 .listed-badge {
     position: absolute;
     top: 8px;
-    left: 8px;
-    background: linear-gradient(135deg, var(--primary), #059669);
+    right: 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
@@ -1364,6 +1364,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    z-index: 2;
 }
 
 /* ==================== COLLECTION VIEW ENHANCEMENTS ==================== */
