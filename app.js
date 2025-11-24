@@ -288,48 +288,17 @@ async function loadCollectionFloors() {
         console.error('Error loading volume:', err);
     }
     
-    const currentBlock = await readProvider.getBlockNumber();
-    
-    // Load floor for each collection in parallel
+    // Load floor for each collection in parallel using getActiveListings
     await Promise.all(COLLECTIONS.map(async (col) => {
         try {
-            // Scan multiple chunks to find all historical listings
-            const allTokenIds = new Set();
-            const chunkSize = 5000;
-            const chunksToScan = 20; // ~100k blocks, roughly 2-3 days
+            // Use new getActiveListings function - instant, no event scanning!
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
+            console.log(`${col.name}: ${activeTokenIds.length} active listings`);
             
-            // Scan chunks in parallel for speed
-            const chunkPromises = [];
-            for (let i = 0; i < chunksToScan; i++) {
-                const endBlock = currentBlock - (i * chunkSize);
-                const startBlock = Math.max(0, endBlock - chunkSize);
-                if (startBlock <= 0) break;
-                
-                chunkPromises.push(
-                    readProvider.getLogs({
-                        address: CONTRACTS.marketplace,
-                        topics: [
-                            ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                            ethers.utils.hexZeroPad(col.address, 32)
-                        ],
-                        fromBlock: startBlock,
-                        toBlock: endBlock
-                    }).catch(() => [])
-                );
-            }
+            if (activeTokenIds.length === 0) return;
             
-            const chunkResults = await Promise.all(chunkPromises);
-            chunkResults.forEach(logs => {
-                logs.forEach(l => allTokenIds.add(parseInt(l.topics[2], 16)));
-            });
-            
-            console.log(`${col.name}: found ${allTokenIds.size} potential listings from ${chunksToScan} chunks`);
-            
-            if (allTokenIds.size === 0) return;
-            
-            // Check active listings in parallel
-            const tokenIds = [...allTokenIds];
-            const results = await Promise.all(tokenIds.map(async (tokenId) => {
+            // Check prices in parallel
+            const results = await Promise.all(activeTokenIds.map(async (tokenId) => {
                 try {
                     const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
                     if (active && priceSGB.gt(0)) {
@@ -340,7 +309,7 @@ async function loadCollectionFloors() {
             }));
             
             const prices = results.filter(p => p !== null);
-            console.log(`${col.name}: ${prices.length} active listings`);
+            console.log(`${col.name}: prices:`, prices);
             
             if (prices.length > 0) {
                 const floor = Math.min(...prices);
@@ -503,58 +472,31 @@ async function loadListedNftsForUser() {
     if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return [];
     
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    const results = [];
     
     try {
-        // Get listing events for user using chunked scanning
-        const currentBlock = await provider.getBlockNumber();
-        const chunkSize = 5000;
-        const chunksToScan = 20;
-        const uniqueListings = new Map();
-        
-        const chunkPromises = [];
-        for (let i = 0; i < chunksToScan; i++) {
-            const endBlock = currentBlock - (i * chunkSize);
-            const startBlock = Math.max(0, endBlock - chunkSize);
-            if (startBlock <= 0) break;
+        // Check all collections for user's listings
+        for (const col of COLLECTIONS) {
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
             
-            chunkPromises.push(
-                provider.getLogs({
-                    address: CONTRACTS.marketplace,
-                    topics: [
-                        ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                        null, null,
-                        ethers.utils.hexZeroPad(userAddress, 32)
-                    ],
-                    fromBlock: startBlock,
-                    toBlock: endBlock
-                }).catch(() => [])
-            );
+            // Check each listing to see if it belongs to user
+            const checks = await Promise.all(activeTokenIds.map(async (tokenId) => {
+                try {
+                    const [seller, , , active] = await marketplace.getListing(col.address, tokenId);
+                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                        return { 
+                            collection: col, 
+                            tokenId: tokenId.toNumber ? tokenId.toNumber() : Number(tokenId)
+                        };
+                    }
+                } catch {}
+                return null;
+            }));
+            
+            results.push(...checks.filter(Boolean));
         }
         
-        const chunkResults = await Promise.all(chunkPromises);
-        chunkResults.forEach(logs => {
-            logs.forEach(log => {
-                const collectionAddress = '0x' + log.topics[1].slice(26);
-                const tokenId = parseInt(log.topics[2], 16);
-                const key = `${collectionAddress.toLowerCase()}-${tokenId}`;
-                uniqueListings.set(key, { collectionAddress, tokenId });
-            });
-        });
-        
-        // Check all unique listings in parallel
-        const listingChecks = [...uniqueListings.values()].map(async ({ collectionAddress, tokenId }) => {
-            try {
-                const [seller, , , active] = await marketplace.getListing(collectionAddress, tokenId);
-                if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
-                    const col = COLLECTIONS.find(c => c.address.toLowerCase() === collectionAddress.toLowerCase());
-                    if (col) return { collection: col, tokenId };
-                }
-            } catch {}
-            return null;
-        });
-        
-        const checked = await Promise.all(listingChecks);
-        return checked.filter(Boolean);
+        return results;
     } catch (err) {
         console.error('Error loading listings:', err.message);
         return [];
@@ -884,38 +826,25 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
-    const currentBlock = await readProvider.getBlockNumber();
+    // Use new getActiveListings - instant!
+    const tokenIds = await marketplace.getActiveListings(collection.address);
     
-    // Scan multiple chunks in parallel
-    const allTokenIds = new Set();
-    const chunkSize = 5000;
-    const chunksToScan = 20;
-    
-    const chunkPromises = [];
-    for (let i = 0; i < chunksToScan; i++) {
-        const endBlock = currentBlock - (i * chunkSize);
-        const startBlock = Math.max(0, endBlock - chunkSize);
-        if (startBlock <= 0) break;
-        
-        chunkPromises.push(
-            readProvider.getLogs({
-                address: CONTRACTS.marketplace,
-                topics: [
-                    ethers.utils.id('Listed(address,uint256,address,uint256,uint256)'),
-                    ethers.utils.hexZeroPad(collection.address, 32)
-                ],
-                fromBlock: startBlock,
-                toBlock: endBlock
-            }).catch(() => [])
-        );
+    if (tokenIds.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
+        return;
     }
     
-    const chunkResults = await Promise.all(chunkPromises);
-    chunkResults.forEach(logs => {
-        logs.forEach(l => allTokenIds.add(parseInt(l.topics[2], 16)));
-    });
+    // Get listing details in parallel
+    const listings = await Promise.all(tokenIds.map(async (tokenId) => {
+        try {
+            const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+            if (active) return { tokenId: tokenId.toNumber ? tokenId.toNumber() : Number(tokenId), seller, priceSGB, pricePOND };
+        } catch {}
+        return null;
+    }));
     
-    const tokenIds = [...allTokenIds];
+    const activeListings = listings.filter(Boolean);
+    grid.innerHTML = '';
     
     if (tokenIds.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No listings found</p></div>';
@@ -945,7 +874,7 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
-    for (const listing of listings) {
+    for (const listing of activeListings) {
         const tokenId = listing.tokenId;
         const nftData = metadata[tokenId];
         
@@ -1435,7 +1364,7 @@ async function confirmListing() {
         btn.disabled = true;
         
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
-        const tx = await marketplace.listNFT(
+        const tx = await marketplace.list(
             currentListingNft.collectionAddress,
             currentListingNft.tokenId,
             priceSGB,
@@ -1516,7 +1445,7 @@ async function cancelListing(collectionAddress, tokenId) {
         actionsEl.innerHTML = `<button class="modal-btn" disabled>Cancelling...</button>`;
         
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
-        const tx = await marketplace.cancelListing(collectionAddress, tokenId);
+        const tx = await marketplace.unlist(collectionAddress, tokenId);
         await tx.wait();
         
         showToast('Listing cancelled!');
