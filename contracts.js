@@ -243,7 +243,6 @@ const COLLECTIONS = [
         description: 'The Grungies on Songbird.',
         image: 'https://ipfs.io/ipfs/bafybeicvh5ohzknagt7qtu6bliikrlfsmv573ufwmjm7k25jx6u54grd2e/1.png',
         baseUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
-        thumbnailUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
         featured: false,
         jsonFile: '0x4f52a074de9f2651d2f711fee63fee9e3b439a7e.json'
     },
