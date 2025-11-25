@@ -128,6 +128,7 @@ const MARKETPLACE_ABI = [
     'function getListing(address collection, uint256 tokenId) view returns (address seller, uint256 priceSGB, uint256 pricePOND, bool active)',
     'function getOffers(address collection, uint256 tokenId) view returns (tuple(address buyer, uint256 amountSGB, uint256 amountPOND, uint256 expiry)[])',
     'function getStats() view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales)',
+    'function getCollectionStats(address collection) view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales)',
     'function getActiveListings(address collection) view returns (uint256[])',
     'function getActiveListingCount(address collection) view returns (uint256)'
 ];
