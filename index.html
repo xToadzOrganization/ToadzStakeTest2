@@ -19,6 +19,7 @@
                 <button class="nav-btn" data-tab="my-nfts">My NFTs</button>
                 <button class="nav-btn" data-tab="staking">Staking</button>
                 <button class="nav-btn" data-tab="lp">LP</button>
+                <button class="nav-btn" data-tab="leaderboard">Leaderboard</button>
                 <button class="nav-btn" data-tab="governance">Governance</button>
             </nav>
         </div>
@@ -34,13 +35,24 @@
                 </div>
             </div>
             <button class="connect-btn" id="connectBtn">Connect Wallet</button>
-            <button class="notification-btn" id="notifBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                <span class="notif-badge" id="notifBadge">0</span>
-            </button>
+            <div class="notif-container">
+                <button class="notification-btn" id="notifBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notif-badge" id="notifBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <h4>Notifications</h4>
+                        <button class="notif-clear-btn" id="clearNotifsBtn">Clear All</button>
+                    </div>
+                    <div class="notif-list" id="notifList">
+                        <div class="notif-empty">No notifications</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -209,6 +221,67 @@
                         <li><span class="mult-badge">3.5x</span> maximum total multiplier</li>
                     </ul>
                     <p class="multiplier-note">Combined with time-lock bonuses (1x-2.5x), earn up to 3.5x rewards.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Tab -->
+        <div class="tab-content" id="tab-leaderboard">
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <h2>Leaderboard</h2>
+                    <p>Top performers across the POND ecosystem</p>
+                </div>
+                
+                <div class="leaderboard-tabs">
+                    <button class="lb-tab-btn active" data-lb="stakers">Top Stakers</button>
+                    <button class="lb-tab-btn" data-lb="traders">Top Traders</button>
+                    <button class="lb-tab-btn" data-lb="lp">Top LP</button>
+                </div>
+
+                <!-- Top Stakers -->
+                <div class="lb-content active" id="lb-stakers">
+                    <div class="lb-table">
+                        <div class="lb-header-row">
+                            <span class="lb-rank">#</span>
+                            <span class="lb-address">Address</span>
+                            <span class="lb-value">NFTs Staked</span>
+                            <span class="lb-value">POND Earned</span>
+                        </div>
+                        <div class="lb-body" id="stakersLbBody">
+                            <div class="lb-loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Traders -->
+                <div class="lb-content" id="lb-traders">
+                    <div class="lb-table">
+                        <div class="lb-header-row">
+                            <span class="lb-rank">#</span>
+                            <span class="lb-address">Address</span>
+                            <span class="lb-value">Volume (SGB)</span>
+                            <span class="lb-value">Sales</span>
+                        </div>
+                        <div class="lb-body" id="tradersLbBody">
+                            <div class="lb-loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top LP -->
+                <div class="lb-content" id="lb-lp">
+                    <div class="lb-table">
+                        <div class="lb-header-row">
+                            <span class="lb-rank">#</span>
+                            <span class="lb-address">Address</span>
+                            <span class="lb-value">Liquidity</span>
+                            <span class="lb-value">Lock Tier</span>
+                        </div>
+                        <div class="lb-body" id="lpLbBody">
+                            <div class="lb-loading">Loading...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
