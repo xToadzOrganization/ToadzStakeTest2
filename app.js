@@ -5,7 +5,7 @@ const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
 function ipfsToHttp(url) {
     if (!url) return '';
     if (url.startsWith('ipfs://')) {
-        return url.replace('ipfs://', 'https://nftstorage.link/ipfs/');
+        return url.replace('ipfs://', 'https://dweb.link/ipfs/');
     }
     return url;
 }
