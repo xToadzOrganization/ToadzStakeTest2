@@ -364,6 +364,9 @@ async function loadRecentActivity() {
                 // Stop if we have enough
                 if (allEvents.length >= 20) break;
                 
+                // Delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
             } catch (err) {
                 console.log(`Chunk ${i} failed:`, err.message);
                 break;
