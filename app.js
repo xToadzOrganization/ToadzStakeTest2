@@ -325,6 +325,7 @@ async function loadRecentActivity() {
     try {
         const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+        const staking = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
         
         const currentBlock = await readProvider.getBlockNumber();
         const allEvents = [];
@@ -340,16 +341,18 @@ async function loadRecentActivity() {
             
             try {
                 // Fetch events in parallel for this chunk
-                const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
+                const [soldEvents, listedEvents, offerAcceptedEvents, stakedEvents] = await Promise.all([
                     marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock),
                     marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock),
-                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock)
+                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock),
+                    staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock)
                 ]);
                 
                 allEvents.push(
                     ...soldEvents.map(e => ({ type: 'sale', event: e })),
                     ...listedEvents.map(e => ({ type: 'listing', event: e })),
-                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
+                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e })),
+                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
                 );
             } catch (err) {
                 console.log(`Error fetching chunk ${i}:`, err.message);
@@ -428,6 +431,10 @@ async function createActivityItem(type, event, readProvider) {
             } else if (event.args.amountPOND.gt(0)) {
                 price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.amountPOND))) + ' POND';
             }
+        } else if (type === 'staked') {
+            typeLabel = 'STAKED';
+            details = `${collection.name} #${tokenId}`;
+            price = ''; // No price for staking
         }
         
         // Get timestamp
