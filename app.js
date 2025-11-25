@@ -368,11 +368,6 @@ async function loadCollectionFloors() {
         console.log('Total volume:', totalVolume, '(SGB:', sgbVol, 'POND:', pondVol, ')');
         totalVolumeFormatted = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
         document.getElementById('totalVolume').textContent = totalVolumeFormatted;
-        
-        // Update volume on all collection cards (total marketplace volume for now)
-        document.querySelectorAll('.volume-stat').forEach(el => {
-            el.textContent = totalVolumeFormatted;
-        });
     } catch (err) {
         console.error('Error loading volume:', err);
     }
@@ -380,6 +375,20 @@ async function loadCollectionFloors() {
     // Load floor for each collection in parallel using getActiveListings
     await Promise.all(COLLECTIONS.map(async (col) => {
         try {
+            // Fetch collection stats (volume, sales)
+            try {
+                const [colVolSGB, colVolPOND, colSales] = await marketplace.getCollectionStats(col.address);
+                const sgbVol = parseFloat(ethers.utils.formatEther(colVolSGB));
+                const pondVol = parseFloat(ethers.utils.formatEther(colVolPOND));
+                const collectionVolume = sgbVol + (pondVol * pondToSgbRate);
+                const volumeText = collectionVolume > 0 ? formatNumber(collectionVolume) + ' SGB' : '--';
+                
+                const volumeEl = document.querySelector(`.volume-stat[data-collection="${col.address}"]`);
+                if (volumeEl) volumeEl.textContent = volumeText;
+            } catch (err) {
+                console.log(`Could not fetch stats for ${col.name}:`, err.message);
+            }
+            
             // Use new getActiveListings function - instant, no event scanning!
             const activeTokenIds = await marketplace.getActiveListings(col.address);
             console.log(`${col.name}: ${activeTokenIds.length} active listings`);
