@@ -16,6 +16,24 @@ const CONTRACTS = {
     luxuryLofts: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8',
     songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
     
+    // External Collections
+    fatCats: '0x0e759aa7166ab3b2b81abd6d9ed16ac83368f97e',
+    fatLeopards: '0x12c40516c7bf32002FF0e3431082C9e28Ab76066',
+    fatTigers: '0xFdD87A263ba929E14Dd0A2D879D9C66d5c8fF3ae',
+    theOracles: '0xCdB019C0990c033724DA55f5A04bE6fd6ec1809d',
+    sparklesGenesis: '0xd167c20575c284dF75BCfe1794d54d3E057Cd4EC',
+    songbirdPunks: '0xd83Ae2C70916a2360e23683A0d3a3556b2c09935',
+    doodcats: '0x279a222a18C033124Ab02290dDec97912A8b7185',
+    bazookaChicks: '0x2972ea6e6CC45c5837CE909DeF032DD325B48415',
+    grumpyMonkeys: '0x972edfF4D09a4fd8ABDe8e8f669B7e1E3B1f7e3D',
+    cybrs: '0x34FF649D709ccCEc77bCf433317176fD13246296',
+    superBadBabies: '0x23A18A46c67301864f5b341e87f89B8Ccb690c44',
+    superBadGenesis: '0xf4b4D366f9B4855690Bb7530abC76C857B259093',
+    innerCircle888: '0xfF063937523c4514179A4d9A6769694bAab357A8',
+    theGrungies: '0x4F52A074De9f2651d2f711FEe63FEe9E3b439A7e',
+    theSenators: '0x927463265eDE6a52604D179d7110B7B2fc057a3f',
+    fort: '0x3157537399860305ebE9e7fd17cfA00AAE291c82',
+    
     // NFT Staking Contract
     nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
     
@@ -25,6 +43,7 @@ const CONTRACTS = {
 
 // ==================== COLLECTION METADATA ====================
 const COLLECTIONS = [
+    // === POND Protocol Collections (stakeable) ===
     {
         address: CONTRACTS.sToadz,
         name: 'sToadz',
@@ -35,6 +54,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         featured: true,
+        stakeable: true,
         jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
     },
     {
@@ -46,6 +66,7 @@ const COLLECTIONS = [
         image: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg',
         baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
         featured: true,
+        stakeable: true,
         jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
     },
     {
@@ -57,7 +78,204 @@ const COLLECTIONS = [
         image: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         featured: true,
+        stakeable: true,
         jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
+    },
+    
+    // === Fat Family ===
+    {
+        address: CONTRACTS.fatCats,
+        name: 'The Fat Cats',
+        symbol: 'FATCAT',
+        supply: 1000,
+        description: 'The original Fat Cats on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmSDmNVAXnEandkTaCpiU4wEBzp7Hjv8Wyy8ZHb9BPzYWo/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmSDmNVAXnEandkTaCpiU4wEBzp7Hjv8Wyy8ZHb9BPzYWo/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmSDmNVAXnEandkTaCpiU4wEBzp7Hjv8Wyy8ZHb9BPzYWo/',
+        featured: false,
+        jsonFile: '0x0e759aa7166ab3b2b81abd6d9ed16ac83368f97e.json'
+    },
+    {
+        address: CONTRACTS.fatLeopards,
+        name: 'The Fat Leopards',
+        symbol: 'FATLEOPARD',
+        supply: 3000,
+        description: 'Fat Leopards on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
+        featured: false,
+        jsonFile: '0x12c40516c7bf32002FF0e3431082C9e28Ab76066.json'
+    },
+    {
+        address: CONTRACTS.fatTigers,
+        name: 'Fat Tigers',
+        symbol: 'FATTIGER',
+        supply: 6000,
+        description: 'Fat Tigers on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
+        featured: false,
+        jsonFile: '0xFdD87A263ba929E14Dd0A2D879D9C66d5c8fF3ae.json'
+    },
+    
+    // === Other Popular Collections ===
+    {
+        address: CONTRACTS.theOracles,
+        name: 'The Oracles',
+        symbol: 'ORACLE',
+        supply: 22222,
+        description: 'The Oracles collection on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
+        featured: false,
+        jsonFile: '0xCdB019C0990c033724DA55f5A04bE6fd6ec1809d.json'
+    },
+    {
+        address: CONTRACTS.sparklesGenesis,
+        name: 'Sparkles Genesis',
+        symbol: 'SPARKLE',
+        supply: 9999,
+        description: 'Sparkles Genesis collection.',
+        image: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
+        featured: false,
+        jsonFile: '0xd167c20575c284dF75BCfe1794d54d3E057Cd4EC.json'
+    },
+    {
+        address: CONTRACTS.songbirdPunks,
+        name: 'Songbird Punks',
+        symbol: 'SBPUNK',
+        supply: 20000,
+        description: 'Punk-style NFTs on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
+        featured: false,
+        jsonFile: '0xd83Ae2C70916a2360e23683A0d3a3556b2c09935.json'
+    },
+    {
+        address: CONTRACTS.doodcats,
+        name: 'doodcats',
+        symbol: 'DOODCAT',
+        supply: 10000,
+        description: 'Doodle cats on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
+        featured: false,
+        jsonFile: '0x279a222a18C033124Ab02290dDec97912A8b7185.json'
+    },
+    {
+        address: CONTRACTS.bazookaChicks,
+        name: 'Bazooka Chicks',
+        symbol: 'BAZOOKA',
+        supply: 10000,
+        description: 'Bazooka Chicks on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
+        featured: false,
+        jsonFile: '0x2972ea6e6CC45c5837CE909DeF032DD325B48415.json'
+    },
+    {
+        address: CONTRACTS.grumpyMonkeys,
+        name: 'Grumpy Monkeys',
+        symbol: 'GRUMPY',
+        supply: 1000,
+        description: 'Grumpy Monkeys on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmQQ1aSzdZaZ1KBR8dWJbnPN1BnFvr3ATtG2BcpeHvgND6/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmQQ1aSzdZaZ1KBR8dWJbnPN1BnFvr3ATtG2BcpeHvgND6/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmQQ1aSzdZaZ1KBR8dWJbnPN1BnFvr3ATtG2BcpeHvgND6/',
+        featured: false,
+        jsonFile: '0x972edfF4D09a4fd8ABDe8e8f669B7e1E3B1f7e3D.json'
+    },
+    {
+        address: CONTRACTS.cybrs,
+        name: 'CYBRs',
+        symbol: 'CYBR',
+        supply: 20000,
+        description: 'CYBRs on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/1',
+        baseUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
+        featured: false,
+        jsonFile: '0x34FF649D709ccCEc77bCf433317176fD13246296.json'
+    },
+    {
+        address: CONTRACTS.superBadBabies,
+        name: 'Super Bad Babies',
+        symbol: 'SBB',
+        supply: 3333,
+        description: 'Super Bad Babies on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
+        featured: false,
+        jsonFile: '0x23A18A46c67301864f5b341e87f89B8Ccb690c44.json'
+    },
+    {
+        address: CONTRACTS.superBadGenesis,
+        name: 'Super Bad Genesis Seed',
+        symbol: 'SBGS',
+        supply: 666,
+        description: 'Super Bad Genesis Seed on Songbird.',
+        image: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
+        featured: false,
+        jsonFile: '0xf4b4D366f9B4855690Bb7530abC76C857B259093.json'
+    },
+    {
+        address: CONTRACTS.innerCircle888,
+        name: '888 Inner Circle',
+        symbol: '888IC',
+        supply: 4086,
+        description: '888 Inner Circle - White Realm.',
+        image: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/1',
+        baseUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
+        thumbnailUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
+        featured: false,
+        jsonFile: '0xfF063937523c4514179A4d9A6769694bAab357A8.json'
+    },
+    {
+        address: CONTRACTS.theGrungies,
+        name: 'The Grungies',
+        symbol: 'GRUNGIE',
+        supply: 1990,
+        description: 'The Grungies on Songbird.',
+        image: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/1.png',
+        baseUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
+        thumbnailUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
+        featured: false,
+        jsonFile: '0x4F52A074De9f2651d2f711FEe63FEe9E3b439A7e.json'
+    },
+    {
+        address: CONTRACTS.theSenators,
+        name: 'The Senators',
+        symbol: 'SENATOR',
+        supply: 350,
+        description: 'The Senators - Satraps Collection.',
+        image: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/1.png',
+        baseUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
+        thumbnailUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
+        featured: false,
+        jsonFile: '0x927463265eDE6a52604D179d7110B7B2fc057a3f.json'
+    },
+    {
+        address: CONTRACTS.fort,
+        name: 'FORT',
+        symbol: 'FORT',
+        supply: 52,
+        description: 'FORT collection on Songbird.',
+        image: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/1.json',
+        baseUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
+        thumbnailUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
+        featured: false,
+        jsonFile: '0x3157537399860305ebE9e7fd17cfA00AAE291c82.json'
     }
 ];
 
