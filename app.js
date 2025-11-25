@@ -21,9 +21,67 @@ async function init() {
     handleHashRoute();
     window.addEventListener('hashchange', handleHashRoute);
     
+    // Initialize notification badge (hide when 0)
+    updateNotificationBadge(0);
+    
     // Check if already connected
     if (window.ethereum && window.ethereum.selectedAddress) {
         await connectWallet();
+    }
+}
+
+// Notification system
+let pendingOffers = [];
+
+function updateNotificationBadge(count, type = 'default') {
+    const badge = document.getElementById('notifBadge');
+    if (count === 0) {
+        badge.style.display = 'none';
+    } else {
+        badge.style.display = 'flex';
+        badge.textContent = count;
+        // Red for incoming money (offers/sales), green for user confirmations
+        if (type === 'money') {
+            badge.style.background = '#e74c3c';
+        } else if (type === 'success') {
+            badge.style.background = '#00d4aa';
+        } else {
+            badge.style.background = '#e74c3c';
+        }
+    }
+}
+
+async function checkForNewOffers() {
+    if (!isConnected || CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return;
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        let offerCount = 0;
+        
+        // Check offers on user's listed NFTs
+        for (const col of COLLECTIONS) {
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
+            
+            for (const tokenId of activeTokenIds) {
+                const [seller] = await marketplace.getListing(col.address, tokenId);
+                if (seller.toLowerCase() === userAddress.toLowerCase()) {
+                    const offers = await marketplace.getOffers(col.address, tokenId);
+                    const validOffers = offers.filter(o => 
+                        o.buyer !== '0x0000000000000000000000000000000000000000' &&
+                        new Date(o.expiry.toNumber() * 1000) > new Date()
+                    );
+                    offerCount += validOffers.length;
+                }
+            }
+        }
+        
+        if (offerCount > 0) {
+            updateNotificationBadge(offerCount, 'money');
+        } else {
+            updateNotificationBadge(0);
+        }
+    } catch (err) {
+        console.log('Could not check offers:', err.message);
     }
 }
 
@@ -135,6 +193,12 @@ async function connectWallet() {
             loadStakedNfts(),
             loadLpPosition()
         ]);
+        
+        // Check for offers on user's listings
+        checkForNewOffers();
+        
+        // Poll for new offers every 30 seconds
+        setInterval(checkForNewOffers, 30000);
         
         // Listen for account changes
         window.ethereum.on('accountsChanged', handleAccountChange);
@@ -278,16 +342,6 @@ async function loadCollectionFloors() {
     
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
     
-    // Load overall volume stats
-    try {
-        const [volumeSGB, volumePOND, sales] = await marketplace.getStats();
-        const totalVolume = parseFloat(ethers.utils.formatEther(volumeSGB));
-        console.log('Total volume:', totalVolume);
-        document.getElementById('totalVolume').textContent = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
-    } catch (err) {
-        console.error('Error loading volume:', err);
-    }
-    
     // Get POND/SGB rate from pool for price comparison
     let pondToSgbRate = 0;
     try {
@@ -302,6 +356,25 @@ async function loadCollectionFloors() {
         console.log('POND to SGB rate:', pondToSgbRate);
     } catch (err) {
         console.log('Could not get pool rate:', err.message);
+    }
+    
+    // Load overall volume stats (convert POND to SGB equivalent)
+    let totalVolumeFormatted = '0 SGB';
+    try {
+        const [volumeSGB, volumePOND, sales] = await marketplace.getStats();
+        const sgbVol = parseFloat(ethers.utils.formatEther(volumeSGB));
+        const pondVol = parseFloat(ethers.utils.formatEther(volumePOND));
+        const totalVolume = sgbVol + (pondVol * pondToSgbRate);
+        console.log('Total volume:', totalVolume, '(SGB:', sgbVol, 'POND:', pondVol, ')');
+        totalVolumeFormatted = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
+        document.getElementById('totalVolume').textContent = totalVolumeFormatted;
+        
+        // Update volume on all collection cards (total marketplace volume for now)
+        document.querySelectorAll('.volume-stat').forEach(el => {
+            el.textContent = totalVolumeFormatted;
+        });
+    } catch (err) {
+        console.error('Error loading volume:', err);
     }
     
     // Load floor for each collection in parallel using getActiveListings
@@ -1246,19 +1319,21 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
                 }
                 
                 offersHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
-                        <div>
-                            <div style="color: white;">${amountText}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="color: white; font-weight: 500;">${amountText}</div>
                             <div style="color: var(--text-muted); font-size: 11px;">
                                 ${formatAddress(offer.buyer)} • ${expired ? 'Expired' : 'Expires ' + expiry.toLocaleDateString()}
                             </div>
                         </div>
+                        <div style="flex-shrink: 0;">
                         ${!expired && canAcceptOffers ? 
-                            `<button class="modal-btn primary" style="padding: 4px 12px; font-size: 12px;" onclick="acceptOffer('${collection.address}', ${tokenId}, ${i})">Accept</button>` : 
+                            `<button class="modal-btn primary" style="padding: 6px 16px; font-size: 12px;" onclick="acceptOffer('${collection.address}', ${tokenId}, ${i})">Accept</button>` : 
                             ''}
                         ${!expired && isConnected && offer.buyer.toLowerCase() === userAddress.toLowerCase() ? 
-                            `<button class="modal-btn secondary" style="padding: 4px 12px; font-size: 12px;" onclick="cancelOffer('${collection.address}', ${tokenId}, ${i})">Cancel</button>` : 
+                            `<button class="modal-btn secondary" style="padding: 6px 16px; font-size: 12px;" onclick="cancelOffer('${collection.address}', ${tokenId}, ${i})">Cancel</button>` : 
                             ''}
+                        </div>
                     </div>
                 `;
             }
@@ -1623,20 +1698,20 @@ async function cancelListing(collectionAddress, tokenId) {
 function showOfferForm(collectionAddress, tokenId) {
     const actionsEl = document.getElementById('modalActions');
     actionsEl.innerHTML = `
-        <div class="offer-form" style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="offer-form" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
             <div style="display: flex; gap: 10px;">
-                <input type="number" id="offerSGB" placeholder="SGB amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
-                <input type="number" id="offerPOND" placeholder="POND amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+                <input type="number" id="offerSGB" placeholder="SGB amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; min-width: 0;">
+                <input type="number" id="offerPOND" placeholder="POND amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; min-width: 0;">
             </div>
-            <select id="offerDuration" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+            <select id="offerDuration" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; width: 100%;">
                 <option value="86400">1 day</option>
                 <option value="259200">3 days</option>
                 <option value="604800" selected>7 days</option>
                 <option value="2592000">30 days</option>
             </select>
             <div style="display: flex; gap: 10px;">
-                <button class="modal-btn primary" onclick="submitOffer('${collectionAddress}', ${tokenId})">Submit Offer</button>
-                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn primary" style="flex: 1;" onclick="submitOffer('${collectionAddress}', ${tokenId})">Submit Offer</button>
+                <button class="modal-btn secondary" style="flex: 1;" onclick="closeModal()">Cancel</button>
             </div>
         </div>
     `;
