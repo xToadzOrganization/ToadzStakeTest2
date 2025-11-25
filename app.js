@@ -288,6 +288,22 @@ async function loadCollectionFloors() {
         console.error('Error loading volume:', err);
     }
     
+    // Get POND/SGB rate from pool for price comparison
+    let pondToSgbRate = 0;
+    try {
+        const pool = new ethers.Contract(CONTRACTS.poolProxy, PONDPOOL_ABI, readProvider);
+        const [reserveSGB, reservePOND] = await Promise.all([
+            pool.reserveSGB(),
+            pool.reservePOND()
+        ]);
+        if (reservePOND.gt(0)) {
+            pondToSgbRate = parseFloat(ethers.utils.formatEther(reserveSGB)) / parseFloat(ethers.utils.formatEther(reservePOND));
+        }
+        console.log('POND to SGB rate:', pondToSgbRate);
+    } catch (err) {
+        console.log('Could not get pool rate:', err.message);
+    }
+    
     // Load floor for each collection in parallel using getActiveListings
     await Promise.all(COLLECTIONS.map(async (col) => {
         try {
@@ -301,20 +317,48 @@ async function loadCollectionFloors() {
             const results = await Promise.all(activeTokenIds.map(async (tokenId) => {
                 try {
                     const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
-                    if (active && priceSGB.gt(0)) {
-                        return parseFloat(ethers.utils.formatEther(priceSGB));
+                    if (!active) return null;
+                    
+                    const sgbPrice = priceSGB.gt(0) ? parseFloat(ethers.utils.formatEther(priceSGB)) : null;
+                    const pondPrice = pricePOND.gt(0) ? parseFloat(ethers.utils.formatEther(pricePOND)) : null;
+                    
+                    // Calculate SGB equivalent for comparison
+                    let sgbEquivalent = Infinity;
+                    let displayPrice = '';
+                    
+                    if (sgbPrice !== null && pondPrice !== null) {
+                        // Both prices set - use lowest
+                        const pondInSgb = pondPrice * pondToSgbRate;
+                        if (sgbPrice <= pondInSgb) {
+                            sgbEquivalent = sgbPrice;
+                            displayPrice = sgbPrice.toFixed(1) + ' SGB';
+                        } else {
+                            sgbEquivalent = pondInSgb;
+                            displayPrice = formatNumber(pondPrice) + ' POND';
+                        }
+                    } else if (sgbPrice !== null) {
+                        sgbEquivalent = sgbPrice;
+                        displayPrice = sgbPrice.toFixed(1) + ' SGB';
+                    } else if (pondPrice !== null && pondToSgbRate > 0) {
+                        sgbEquivalent = pondPrice * pondToSgbRate;
+                        displayPrice = formatNumber(pondPrice) + ' POND';
                     }
+                    
+                    return { sgbEquivalent, displayPrice };
                 } catch {}
                 return null;
             }));
             
-            const prices = results.filter(p => p !== null);
-            console.log(`${col.name}: prices:`, prices);
+            const validPrices = results.filter(p => p !== null && p.sgbEquivalent < Infinity);
             
-            if (prices.length > 0) {
-                const floor = Math.min(...prices);
+            if (validPrices.length > 0) {
+                // Find lowest price
+                const floor = validPrices.reduce((min, p) => 
+                    p.sgbEquivalent < min.sgbEquivalent ? p : min
+                );
+                
                 const floorEl = document.querySelector(`.floor-price[data-collection="${col.address}"]`);
-                if (floorEl) floorEl.textContent = floor.toFixed(1) + ' SGB';
+                if (floorEl) floorEl.textContent = floor.displayPrice;
             }
         } catch (err) {
             console.error(`Error loading floor for ${col.name}:`, err);
