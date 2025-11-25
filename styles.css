@@ -1578,3 +1578,259 @@ body {
     flex-wrap: wrap;
     align-items: center;
 }
+/* ==================== LEADERBOARD ==================== */
+.leaderboard-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.leaderboard-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.leaderboard-header p {
+    color: #888;
+}
+
+.leaderboard-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #2a2a3e;
+    padding-bottom: 1rem;
+}
+
+.lb-tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid #2a2a3e;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lb-tab-btn:hover {
+    border-color: #00d4aa;
+    color: #fff;
+}
+
+.lb-tab-btn.active {
+    background: linear-gradient(135deg, #00d4aa 0%, #00a080 100%);
+    border-color: #00d4aa;
+    color: #000;
+    font-weight: 600;
+}
+
+.lb-content {
+    display: none;
+}
+
+.lb-content.active {
+    display: block;
+}
+
+.lb-table {
+    background: #1a1a2e;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.lb-header-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 150px 150px;
+    padding: 1rem 1.5rem;
+    background: #252540;
+    font-weight: 600;
+    color: #888;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+}
+
+.lb-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.lb-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 150px 150px;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #2a2a3e;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.lb-row:hover {
+    background: #252540;
+}
+
+.lb-row:last-child {
+    border-bottom: none;
+}
+
+.lb-rank {
+    font-weight: 700;
+    color: #00d4aa;
+}
+
+.lb-row:nth-child(1) .lb-rank { color: #ffd700; }
+.lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+.lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+
+.lb-address {
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.lb-address a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.lb-address a:hover {
+    color: #00d4aa;
+}
+
+.lb-value {
+    text-align: right;
+    font-weight: 500;
+}
+
+.lb-loading {
+    padding: 2rem;
+    text-align: center;
+    color: #888;
+}
+
+/* ==================== NOTIFICATION DROPDOWN ==================== */
+.notif-container {
+    position: relative;
+}
+
+.notif-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 320px;
+    max-height: 400px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a3e;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: none;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notif-dropdown.show {
+    display: block;
+}
+
+.notif-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.notif-dropdown-header h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.notif-clear-btn {
+    background: transparent;
+    border: none;
+    color: #00d4aa;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.notif-clear-btn:hover {
+    text-decoration: underline;
+}
+
+.notif-list {
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.notif-item {
+    padding: 1rem;
+    border-bottom: 1px solid #2a2a3e;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notif-item:hover {
+    background: #252540;
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-item.sale {
+    border-left: 3px solid #00d4aa;
+}
+
+.notif-item.offer {
+    border-left: 3px solid #ffd700;
+}
+
+.notif-item.outbid {
+    border-left: 3px solid #ff4444;
+}
+
+.notif-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.notif-desc {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.notif-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.notif-empty {
+    padding: 2rem;
+    text-align: center;
+    color: #666;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .lb-header-row,
+    .lb-row {
+        grid-template-columns: 40px 1fr 100px;
+    }
+    
+    .lb-header-row span:last-child,
+    .lb-row span:last-child {
+        display: none;
+    }
+    
+    .notif-dropdown {
+        position: fixed;
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+    }
+}
+
