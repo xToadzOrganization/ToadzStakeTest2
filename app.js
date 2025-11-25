@@ -328,62 +328,45 @@ async function loadRecentActivity() {
         const staking = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
         
         const currentBlock = await readProvider.getBlockNumber();
-        const allEvents = [];
-        const chunkSize = 30;
-        const maxChunks = 20; // Reduced from 50
+        let allEvents = [];
         
-        // Fetch chunks sequentially to avoid rate limits
-        for (let i = 0; i < maxChunks && allEvents.length < 20; i++) {
-            const toBlock = currentBlock - (i * chunkSize);
-            const fromBlock = Math.max(0, toBlock - chunkSize + 1);
-            
-            if (fromBlock <= 0) break;
+        // Try progressively larger ranges until we get events or hit limit
+        const ranges = [500, 1000, 2000, 3000];
+        
+        for (const range of ranges) {
+            const fromBlock = Math.max(0, currentBlock - range);
             
             try {
-                // Fetch marketplace events
-                const soldEvents = await marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock).catch(() => []);
-                const listedEvents = await marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock).catch(() => []);
-                const offerAcceptedEvents = await marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock).catch(() => []);
+                const [soldEvents, listedEvents, offerEvents, stakedEvents] = await Promise.all([
+                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock).catch(() => []),
+                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock).catch(() => []),
+                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock).catch(() => []),
+                    staking.queryFilter(staking.filters.Staked(), fromBlock, currentBlock).catch(() => [])
+                ]);
                 
-                allEvents.push(
+                allEvents = [
                     ...soldEvents.map(e => ({ type: 'sale', event: e })),
                     ...listedEvents.map(e => ({ type: 'listing', event: e })),
-                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
-                );
+                    ...offerEvents.map(e => ({ type: 'offer', event: e })),
+                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
+                ];
                 
-                // Small delay
-                await new Promise(resolve => setTimeout(resolve, 50));
+                if (allEvents.length > 0) break; // Found events, stop
+                
             } catch (err) {
-                console.log(`Error fetching marketplace chunk ${i}:`, err.message);
+                console.log(`Range ${range} failed, trying next...`);
+                continue; // Try next range
             }
         }
         
-        // Now fetch staking events if we have room (limit to 5 max)
-        const stakingEventsNeeded = Math.max(0, 5 - allEvents.filter(e => e.type === 'staked').length);
-        if (stakingEventsNeeded > 0) {
-            try {
-                for (let i = 0; i < 10 && allEvents.filter(e => e.type === 'staked').length < 5; i++) {
-                    const toBlock = currentBlock - (i * chunkSize);
-                    const fromBlock = Math.max(0, toBlock - chunkSize + 1);
-                    const stakedEvents = await staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock).catch(() => []);
-                    allEvents.push(...stakedEvents.map(e => ({ type: 'staked', event: e })));
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                }
-            } catch (err) {
-                console.log('Error fetching staking events:', err.message);
-            }
-        }
-        
-        // Sort by block number (most recent first)
-        allEvents.sort((a, b) => b.event.blockNumber - a.event.blockNumber);
-        
-        // Take most recent 20
-        const recentEvents = allEvents.slice(0, 20);
-        
-        if (recentEvents.length === 0) {
+        if (allEvents.length === 0) {
             activityList.innerHTML = '<div class="activity-loading">No recent activity</div>';
             return;
         }
+        
+        // Sort and take top 20
+        allEvents.sort((a, b) => b.event.blockNumber - a.event.blockNumber);
+        const recentEvents = allEvents.slice(0, 20);
         
         activityList.innerHTML = '';
         
