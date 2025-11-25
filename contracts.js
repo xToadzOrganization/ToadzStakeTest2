@@ -112,7 +112,8 @@ const NFT_STAKING_ABI = [
     'function getUserStats(address user) view returns (uint256 totalStaked, uint256 stakedSToadz, uint256 stakedLofts, uint256 stakedCity, uint256 pendingPond)',
     'function getGlobalStats() view returns (uint256 totalNFTsStaked, uint256 dailyReward, uint256 rewardPerNFTPerDay, uint256 contractPondBalance)',
     'function totalStakedNFTs() view returns (uint256)',
-    'function dailyRewardAmount() view returns (uint256)'
+    'function dailyRewardAmount() view returns (uint256)',
+    'event Staked(address indexed user, address indexed collection, uint256 tokenId)'
 ];
 
 // Marketplace ABI
