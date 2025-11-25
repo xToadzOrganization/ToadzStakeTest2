@@ -1,1570 +1,1980 @@
-/* ==================== RESET & BASE ==================== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-:root {
-    --bg-primary: #020617;
-    --bg-secondary: #0f172a;
-    --bg-tertiary: #1e293b;
-    --border: #334155;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --green-primary: #10b981;
-    --green-secondary: #34d399;
-    --green-glow: rgba(16, 185, 129, 0.3);
-    --orange-primary: #f59e0b;
-    --red-primary: #ef4444;
-    --purple-primary: #a855f7;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* ==================== HEADER ==================== */
-.header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 24px;
-    background: rgba(2, 6, 23, 0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-}
-
-.logo {
-    font-family: 'Press Start 2P', cursive;
-    font-size: 18px;
-    color: var(--green-primary);
-    text-decoration: none;
-    text-shadow: 0 0 20px var(--green-glow);
-}
-
-.nav {
-    display: flex;
-    gap: 4px;
-}
-
-.nav-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.nav-btn:hover {
-    color: var(--text-primary);
-    background: var(--bg-tertiary);
-}
-
-.nav-btn.active {
-    color: var(--green-primary);
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.balances {
-    display: flex;
-    gap: 16px;
-    padding-right: 16px;
-    border-right: 1px solid var(--border);
-}
-
-.balance-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.balance-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.balance-label {
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-}
-
-.connect-btn {
-    background: linear-gradient(135deg, var(--green-primary), #059669);
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.connect-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px var(--green-glow);
-}
-
-.connect-btn.connected {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--green-primary);
-}
-
-.notification-btn {
-    position: relative;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.notification-btn:hover {
-    border-color: var(--green-primary);
-    color: var(--text-primary);
-}
-
-.notif-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background: var(--red-primary);
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.notif-badge:empty,
-.notif-badge[data-count="0"] {
-    display: none;
-}
-
-/* ==================== MOBILE NAV ==================== */
-.mobile-nav {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border);
-    padding: 8px;
-    z-index: 100;
-}
-
-.mobile-nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    padding: 8px;
-    font-size: 10px;
-    cursor: pointer;
-    border-radius: 8px;
-}
-
-.mobile-nav-btn.active {
-    color: var(--green-primary);
-}
-
-.mobile-nav-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* ==================== MAIN CONTENT ==================== */
-.main {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px;
-    padding-bottom: 100px;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ==================== FEATURED BANNER ==================== */
-.featured-banner {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02));
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 16px;
-    padding: 32px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-}
-
-.featured-text h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, var(--green-primary), var(--green-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.featured-text p {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.featured-stats {
-    display: flex;
-    gap: 32px;
-}
-
-.feat-stat {
-    text-align: center;
-}
-
-.feat-value {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.feat-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-}
-
-/* ==================== FILTERS ==================== */
-.filters {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.filter-tabs {
-    display: flex;
-    gap: 8px;
-}
-
-.filter-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    font-size: 13px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.filter-btn:hover,
-.filter-btn.active {
-    border-color: var(--green-primary);
-    color: var(--green-primary);
-}
-
-.sort-dropdown select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 8px 12px;
-    font-size: 13px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-/* ==================== COLLECTIONS GRID ==================== */
-.collections-layout {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 24px;
-}
-
-.collections-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
-    gap: 20px;
-    justify-content: center;
-}
-
-.collection-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s;
-    max-width: 400px;
-}
-
-.collection-card:hover {
-    border-color: var(--green-primary);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-}
-
-.collection-banner {
-    height: 120px;
-    background: var(--bg-tertiary);
-    overflow: hidden;
-}
-
-.collection-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.collection-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.collection-info {
-    padding: 20px;
-}
-
-.collection-name {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.collection-desc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    line-height: 1.4;
-}
-
-.collection-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-
-.col-stat {
-    text-align: center;
-}
-
-.col-stat-value {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.col-stat-label {
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-}
-
-.multiplier-badge {
-    display: inline-block;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--green-primary);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-top: 12px;
-}
-
-/* ==================== ACTIVITY FEED ==================== */
-.activity-feed {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-}
-
-.activity-header h3 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-}
-
-.activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.activity-loading {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 13px;
-    padding: 20px;
-}
-
-.activity-item {
-    display: flex;
-    gap: 12px;
-    padding: 12px;
-    background: var(--bg-tertiary);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.activity-item:hover {
-    border-color: var(--green-primary);
-    transform: translateX(2px);
-}
-
-.activity-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    background: var(--bg-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.activity-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.activity-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.activity-type {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: 2px;
-}
-
-.activity-type.sale {
-    color: var(--green-primary);
-}
-
-.activity-type.listing {
-    color: var(--text-secondary);
-}
-
-.activity-type.offer {
-    color: var(--orange-primary);
-}
-
-.activity-details {
-    font-size: 13px;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.activity-price {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--green-primary);
-}
-
-.activity-time {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-
-/* ==================== COLLECTION DETAIL VIEW ==================== */
-.collection-detail-view {
-    width: 100%;
-    grid-column: 1 / -1; /* Span full width of parent grid */
-}
-
-.collection-detail-header {
-    margin-bottom: 32px;
-}
-
-.back-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 24px;
-}
-
-.back-btn:hover {
-    border-color: var(--green-primary);
-    color: var(--green-primary);
-}
-
-.collection-detail-info {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-}
-
-.collection-detail-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 16px;
-    object-fit: cover;
-    background: var(--bg-tertiary);
-}
-
-.collection-detail-text h2 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.collection-detail-text p {
-    color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 12px;
-    max-width: 600px;
-}
-
-.collection-detail-stats {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.collection-detail-stats span {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.collection-detail-filters {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-
-.search-input {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 10px 16px;
-    font-size: 14px;
-    border-radius: 8px;
-    width: 200px;
-    transition: all 0.2s;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--green-primary);
-}
-
-.search-input::placeholder {
-    color: var(--text-muted);
-}
-
-.collection-detail-filters select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 10px 16px;
-    font-size: 14px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.collection-nfts-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
-    gap: 16px;
-    width: 100%;
-}
-
-/* Staked badge on NFT cards */
-.staked-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--purple-primary);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.nft-image {
-    position: relative;
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .collection-detail-info {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+// ==================== STATE ====================
+let provider = null;
+let signer = null;
+let userAddress = null;
+let isConnected = false;
+let currentTab = 'collections';
+let userNfts = {};
+let stakedNfts = {};
+let collectionMetadata = {}; // Cache for JSON metadata
+let currentCollectionView = null;
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+    setupEventListeners();
+    await loadCollectionMetadata();
+    await loadCollections();
+    loadRecentActivity(); // Don't await - load in background
+    
+    // Handle URL hash routing
+    handleHashRoute();
+    window.addEventListener('hashchange', handleHashRoute);
+    
+    // Initialize notification badge (hide when 0)
+    updateNotificationBadge(0);
+    
+    // Check if already connected
+    if (window.ethereum && window.ethereum.selectedAddress) {
+        await connectWallet();
+    }
+}
+
+// Notification system
+let pendingOffers = [];
+
+function updateNotificationBadge(count, type = 'default') {
+    const badge = document.getElementById('notifBadge');
+    if (count === 0) {
+        badge.style.display = 'none';
+    } else {
+        badge.style.display = 'flex';
+        badge.textContent = count;
+        // Red for incoming money (offers/sales), green for user confirmations
+        if (type === 'money') {
+            badge.style.background = '#e74c3c';
+        } else if (type === 'success') {
+            badge.style.background = '#00d4aa';
+        } else {
+            badge.style.background = '#e74c3c';
+        }
+    }
+}
+
+async function checkForNewOffers() {
+    if (!isConnected || CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return;
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        let offerCount = 0;
+        
+        // Check offers on user's listed NFTs
+        for (const col of COLLECTIONS) {
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
+            
+            for (const tokenId of activeTokenIds) {
+                const [seller] = await marketplace.getListing(col.address, tokenId);
+                if (seller.toLowerCase() === userAddress.toLowerCase()) {
+                    const offers = await marketplace.getOffers(col.address, tokenId);
+                    const validOffers = offers.filter(o => 
+                        o.buyer !== '0x0000000000000000000000000000000000000000' &&
+                        new Date(o.expiry.toNumber() * 1000) > new Date()
+                    );
+                    offerCount += validOffers.length;
+                }
+            }
+        }
+        
+        if (offerCount > 0) {
+            updateNotificationBadge(offerCount, 'money');
+        } else {
+            updateNotificationBadge(0);
+        }
+    } catch (err) {
+        console.log('Could not check offers:', err.message);
+    }
+}
+
+function handleHashRoute() {
+    const hash = window.location.hash.slice(1); // Remove #
+    const validTabs = ['collections', 'my-nfts', 'staking', 'lp', 'governance'];
+    if (hash && validTabs.includes(hash)) {
+        switchTab(hash, false); // false = don't update hash again
+    }
+}
+
+// ==================== LOAD METADATA ====================
+async function loadCollectionMetadata() {
+    for (const col of COLLECTIONS) {
+        if (col.jsonFile) {
+            try {
+                const response = await fetch(col.jsonFile);
+                if (response.ok) {
+                    let data = await response.json();
+                    
+                    // Convert array format to object format if needed
+                    if (Array.isArray(data)) {
+                        const obj = {};
+                        for (const item of data) {
+                            obj[item.id] = item;
+                        }
+                        data = obj;
+                    }
+                    
+                    collectionMetadata[col.address] = data;
+                }
+            } catch (err) {
+                console.log(`Could not load metadata for ${col.name}:`, err.message);
+            }
+        }
+    }
+}
+
+// ==================== EVENT LISTENERS ====================
+function setupEventListeners() {
+    // Connect button
+    document.getElementById('connectBtn').addEventListener('click', connectWallet);
+    
+    // Tab navigation
+    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+    
+    // Modal close
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('nftModal').addEventListener('click', (e) => {
+        if (e.target.id === 'nftModal') closeModal();
+    });
+    
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterCollections(btn.dataset.filter);
+        });
+    });
+    
+    // Sort dropdown
+    document.getElementById('sortCollections').addEventListener('change', (e) => {
+        sortCollections(e.target.value);
+    });
+    
+    // Staking actions
+    document.getElementById('stakeAllBtn')?.addEventListener('click', stakeAllNfts);
+    document.getElementById('unstakeAllBtn')?.addEventListener('click', unstakeAllNfts);
+    document.getElementById('claimStakeRewardsBtn')?.addEventListener('click', claimStakingRewards);
+}
+
+// ==================== WALLET ====================
+async function connectWallet() {
+    if (!window.ethereum) {
+        showToast('Please install MetaMask', 'error');
+        return;
     }
     
-    .collection-detail-stats {
-        justify-content: center;
-        flex-wrap: wrap;
+    try {
+        const btn = document.getElementById('connectBtn');
+        btn.textContent = 'Connecting...';
+        
+        // Request accounts
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        
+        // Check network
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (parseInt(chainId, 16) !== SONGBIRD_CHAIN_ID) {
+            await switchToSongbird();
+        }
+        
+        // Setup provider
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        isConnected = true;
+        
+        // Update UI
+        btn.textContent = formatAddress(userAddress);
+        btn.classList.add('connected');
+        
+        // Load user data
+        await Promise.all([
+            loadBalances(),
+            loadUserNfts(),
+            loadStakedNfts(),
+            loadLpPosition()
+        ]);
+        
+        // Check for offers on user's listings
+        checkForNewOffers();
+        
+        // Poll for new offers every 30 seconds
+        setInterval(checkForNewOffers, 30000);
+        
+        // Listen for account changes
+        window.ethereum.on('accountsChanged', handleAccountChange);
+        window.ethereum.on('chainChanged', () => window.location.reload());
+        
+        showToast('Wallet connected');
+        
+    } catch (err) {
+        console.error('Connect failed:', err);
+        showToast('Failed to connect wallet', 'error');
+        document.getElementById('connectBtn').textContent = 'Connect Wallet';
+    }
+}
+
+async function switchToSongbird() {
+    try {
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x13' }]
+        });
+    } catch (err) {
+        if (err.code === 4902) {
+            await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: '0x13',
+                    chainName: 'Songbird',
+                    nativeCurrency: { name: 'SGB', symbol: 'SGB', decimals: 18 },
+                    rpcUrls: [SONGBIRD_RPC],
+                    blockExplorerUrls: ['https://songbird-explorer.flare.network']
+                }]
+            });
+        }
+    }
+}
+
+function handleAccountChange(accounts) {
+    if (accounts.length === 0) {
+        isConnected = false;
+        userAddress = null;
+        document.getElementById('connectBtn').textContent = 'Connect Wallet';
+        document.getElementById('connectBtn').classList.remove('connected');
+    } else {
+        userAddress = accounts[0];
+        document.getElementById('connectBtn').textContent = formatAddress(userAddress);
+        loadBalances();
+        loadUserNfts();
+    }
+}
+
+// ==================== LOAD DATA ====================
+async function loadBalances() {
+    if (!isConnected) return;
+    
+    try {
+        const [sgbBal, pondBal] = await Promise.all([
+            provider.getBalance(userAddress),
+            new ethers.Contract(CONTRACTS.pondToken, ERC20_ABI, provider).balanceOf(userAddress)
+        ]);
+        
+        document.getElementById('sgbBal').textContent = parseFloat(ethers.utils.formatEther(sgbBal)).toFixed(2);
+        document.getElementById('pondBal').textContent = formatNumber(parseFloat(ethers.utils.formatEther(pondBal)));
+    } catch (err) {
+        console.error('Load balances failed:', err);
+    }
+}
+
+async function loadCollections() {
+    const grid = document.getElementById('collectionsGrid');
+    grid.innerHTML = '';
+    grid.style.display = ''; // Reset to CSS default (grid)
+    
+    for (const col of COLLECTIONS) {
+        const card = createCollectionCard(col);
+        grid.appendChild(card);
     }
     
-    .collection-detail-filters {
-        flex-direction: column;
+    // Load floor prices in background
+    loadCollectionFloors();
+}
+
+function createCollectionCard(collection) {
+    const card = document.createElement('div');
+    card.className = 'collection-card';
+    card.style.cursor = 'pointer';
+    card.dataset.address = collection.address;
+    
+    card.innerHTML = `
+        <div class="collection-banner">
+            <img src="${collection.image}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
+        </div>
+        <div class="collection-info">
+            <div class="collection-name">${collection.name}</div>
+            <div class="collection-desc">${collection.description}</div>
+            <div class="collection-stats">
+                <div class="col-stat">
+                    <span class="col-stat-value">${formatNumber(collection.supply)}</span>
+                    <span class="col-stat-label">Items</span>
+                </div>
+                <div class="col-stat">
+                    <span class="col-stat-value floor-price" data-collection="${collection.address}">--</span>
+                    <span class="col-stat-label">Floor</span>
+                </div>
+                <div class="col-stat">
+                    <span class="col-stat-value volume-stat" data-collection="${collection.address}">--</span>
+                    <span class="col-stat-label">Volume</span>
+                </div>
+            </div>
+            <div class="multiplier-badge">🔥 LP Boost Eligible</div>
+        </div>
+    `;
+    
+    // Click handler to open collection view
+    card.addEventListener('click', () => openCollectionView(collection));
+    
+    return card;
+}
+
+// Load recent marketplace activity
+async function loadRecentActivity() {
+    const activityList = document.getElementById('activityList');
+    
+    try {
+        const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+        
+        const currentBlock = await readProvider.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 5000); // Last ~5000 blocks
+        
+        // Fetch events in parallel
+        const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
+            marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock),
+            marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock),
+            marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock)
+        ]);
+        
+        // Combine and sort by block number (most recent first)
+        const allEvents = [
+            ...soldEvents.map(e => ({ type: 'sale', event: e })),
+            ...listedEvents.map(e => ({ type: 'listing', event: e })),
+            ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
+        ].sort((a, b) => b.event.blockNumber - a.event.blockNumber);
+        
+        // Take most recent 20
+        const recentEvents = allEvents.slice(0, 20);
+        
+        if (recentEvents.length === 0) {
+            activityList.innerHTML = '<div class="activity-loading">No recent activity</div>';
+            return;
+        }
+        
+        activityList.innerHTML = '';
+        
+        for (const { type, event } of recentEvents) {
+            const item = await createActivityItem(type, event, readProvider);
+            if (item) activityList.appendChild(item);
+        }
+        
+    } catch (err) {
+        console.error('Error loading activity:', err);
+        activityList.innerHTML = '<div class="activity-loading">Could not load activity</div>';
+    }
+}
+
+async function createActivityItem(type, event, readProvider) {
+    try {
+        const collection = COLLECTIONS.find(c => c.address.toLowerCase() === event.args.collection.toLowerCase());
+        if (!collection) return null;
+        
+        const tokenId = event.args.tokenId.toNumber();
+        const metadata = collectionMetadata[collection.address];
+        const nftData = metadata ? metadata[tokenId] : null;
+        
+        // Get image URL
+        let imageUrl = collection.thumbnailUri 
+            ? collection.thumbnailUri + tokenId + '.png'
+            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+        
+        // Format details based on type
+        let typeLabel = '';
+        let details = '';
+        let price = '';
+        
+        if (type === 'sale') {
+            typeLabel = 'SALE';
+            const buyer = event.args.buyer;
+            details = `${collection.name} #${tokenId}`;
+            
+            if (event.args.priceSGB.gt(0)) {
+                price = parseFloat(ethers.utils.formatEther(event.args.priceSGB)).toFixed(2) + ' SGB';
+            } else if (event.args.pricePOND.gt(0)) {
+                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.pricePOND))) + ' POND';
+            }
+        } else if (type === 'listing') {
+            typeLabel = 'LISTED';
+            details = `${collection.name} #${tokenId}`;
+            
+            if (event.args.priceSGB.gt(0)) {
+                price = parseFloat(ethers.utils.formatEther(event.args.priceSGB)).toFixed(2) + ' SGB';
+            } else if (event.args.pricePOND.gt(0)) {
+                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.pricePOND))) + ' POND';
+            }
+        } else if (type === 'offer') {
+            typeLabel = 'OFFER ACCEPTED';
+            details = `${collection.name} #${tokenId}`;
+            
+            if (event.args.amountSGB.gt(0)) {
+                price = parseFloat(ethers.utils.formatEther(event.args.amountSGB)).toFixed(2) + ' SGB';
+            } else if (event.args.amountPOND.gt(0)) {
+                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.amountPOND))) + ' POND';
+            }
+        }
+        
+        // Get timestamp
+        const block = await readProvider.getBlock(event.blockNumber);
+        const timeAgo = getTimeAgo(block.timestamp);
+        
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.onclick = () => openNftModal(collection, tokenId, false, imageUrl);
+        
+        item.innerHTML = `
+            <div class="activity-icon">
+                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" 
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
+            </div>
+            <div class="activity-info">
+                <div class="activity-type ${type}">${typeLabel}</div>
+                <div class="activity-details">${details}</div>
+                <div class="activity-price">${price}</div>
+                <div class="activity-time">${timeAgo}</div>
+            </div>
+        `;
+        
+        return item;
+        
+    } catch (err) {
+        console.log('Error creating activity item:', err);
+        return null;
+    }
+}
+
+function getTimeAgo(timestamp) {
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+    
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+}
+
+// Load floor prices for all collections
+async function loadCollectionFloors() {
+    console.log('Loading collection floors...');
+    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') {
+        console.log('Marketplace not set');
+        return;
     }
     
-    .search-input {
-        width: 100%;
-    }
-}
-
-/* ==================== NFT GRID ==================== */
-.my-nfts-header,
-.staking-header {
-    margin-bottom: 24px;
-}
-
-.my-nfts-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.my-nfts-header h2,
-.staking-header h2 {
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.staking-sub {
-    color: var(--text-secondary);
-    margin-top: 8px;
-}
-
-.action-btn {
-    background: var(--green-primary);
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.action-btn:hover {
-    background: #059669;
-}
-
-.my-nfts-grid,
-.staked-nfts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
-}
-
-.nft-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.nft-card:hover {
-    border-color: var(--green-primary);
-    transform: translateY(-2px);
-}
-
-.nft-card.staked {
-    border-color: var(--purple-primary);
-}
-
-.nft-image {
-    aspect-ratio: 1;
-    background: var(--bg-tertiary);
-}
-
-.nft-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.nft-image video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.nft-info {
-    padding: 12px;
-}
-
-.nft-name {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.nft-price {
-    font-size: 13px;
-    color: var(--green-primary);
-    font-weight: 500;
-}
-
-.nft-collection {
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-.empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-}
-
-/* ==================== STAKING STATS ==================== */
-.staking-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.stake-stat-box {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-}
-
-.stake-stat-box.highlight {
-    border-color: var(--green-primary);
-    background: rgba(16, 185, 129, 0.05);
-}
-
-.stake-stat-value {
-    display: block;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.stake-stat-box.highlight .stake-stat-value {
-    color: var(--green-primary);
-}
-
-.stake-stat-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-top: 4px;
-}
-
-.staking-actions {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 32px;
-}
-
-.stake-action-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.stake-action-btn:hover {
-    border-color: var(--text-secondary);
-}
-
-.stake-action-btn.primary {
-    background: var(--green-primary);
-    border-color: var(--green-primary);
-}
-
-.stake-action-btn.primary:hover {
-    background: #059669;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text-secondary);
-}
-
-/* ==================== LP TAB ==================== */
-.lp-container,
-.gov-container {
-    max-width: 700px;
-    margin: 0 auto;
-}
-
-.lp-header,
-.gov-header {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.lp-header h2,
-.gov-header h2 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.lp-header p,
-.gov-header p {
-    color: var(--text-secondary);
-}
-
-.lp-info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.lp-info-box {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-}
-
-.lp-info-value {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--green-primary);
-}
-
-.lp-info-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-top: 4px;
-}
-
-.lp-cta {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.lp-link-btn {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--green-primary), #059669);
-    color: white;
-    padding: 14px 32px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.lp-link-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px var(--green-glow);
-}
-
-.lp-multiplier-info {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-}
-
-.lp-multiplier-info h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
-}
-
-.lp-multiplier-info p {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 16px;
-}
-
-.multiplier-list {
-    list-style: none;
-}
-
-.multiplier-list li {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.multiplier-list li:last-child {
-    border-bottom: none;
-}
-
-.mult-badge {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--green-primary);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* ==================== GOVERNANCE TAB ==================== */
-.gov-power {
-    margin-bottom: 32px;
-}
-
-.gov-power-box {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02));
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    border-radius: 16px;
-    padding: 32px;
-    text-align: center;
-}
-
-.gov-power-value {
-    display: block;
-    font-size: 48px;
-    font-weight: 700;
-    color: var(--green-primary);
-}
-
-.gov-power-label {
-    font-size: 14px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-}
-
-.gov-breakdown {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 32px;
-}
-
-.gov-breakdown h3 {
-    font-size: 16px;
-    margin-bottom: 16px;
-    color: var(--text-secondary);
-}
-
-.power-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-secondary);
-}
-
-.power-row:last-child {
-    border-bottom: none;
-}
-
-.power-row span:last-child {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.proposals-section h3 {
-    font-size: 18px;
-    margin-bottom: 16px;
-}
-
-.proposals-list {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-}
-
-/* ==================== MODAL ==================== */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s;
-    padding: 20px;
-}
-
-.modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.modal-content {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    max-width: 800px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-}
-
-.modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: var(--bg-tertiary);
-    border: none;
-    color: var(--text-primary);
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 10;
-}
-
-.modal-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-}
-
-.modal-image {
-    aspect-ratio: 1;
-    background: var(--bg-tertiary);
-}
-
-.modal-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.modal-info {
-    padding: 24px;
-    overflow-x: hidden;
-}
-
-.modal-info h2 {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.modal-collection {
-    color: var(--text-muted);
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-
-.modal-traits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.trait-tag {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-}
-
-.trait-tag span {
-    color: var(--text-muted);
-}
-
-.modal-price-section {
-    background: var(--bg-tertiary);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 20px;
-}
-
-.price-label {
-    display: block;
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-}
-
-.price-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--green-primary);
-}
-
-.modal-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.modal-actions > .offer-form {
-    width: 100%;
-    flex-basis: 100%;
-}
-
-.modal-btn {
-    flex: 1;
-    padding: 14px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.modal-btn.primary {
-    background: var(--green-primary);
-    border: none;
-    color: white;
-}
-
-.modal-btn.secondary {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-}
-
-.modal-history h4 {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-}
-
-.history-list {
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.history-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-}
-
-/* ==================== TOAST ==================== */
-.toast-container {
-    position: fixed;
-    bottom: 100px;
-    right: 24px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.toast {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 20px;
-    min-width: 280px;
-    animation: slideIn 0.3s ease;
-}
-
-.toast.success {
-    border-color: var(--green-primary);
-}
-
-.toast.error {
-    border-color: var(--red-primary);
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 768px) {
-    .nav {
-        display: none;
+    // Use read-only provider if wallet not connected
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    
+    // Load total staked first (separate from marketplace)
+    if (CONTRACTS.nftStaking !== '0x0000000000000000000000000000000000000000') {
+        try {
+            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+            const totalStaked = await stakingContract.totalStakedNFTs();
+            console.log('Total staked:', totalStaked.toString());
+            document.getElementById('totalStaked').textContent = formatNumber(totalStaked.toNumber());
+        } catch (err) {
+            console.error('Error loading total staked:', err);
+        }
     }
     
-    .mobile-nav {
-        display: flex;
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    
+    // Get POND/SGB rate from pool for price comparison
+    let pondToSgbRate = 0;
+    try {
+        const pool = new ethers.Contract(CONTRACTS.pondPool, PONDPOOL_ABI, readProvider);
+        const [reserveSGB, reservePOND] = await Promise.all([
+            pool.reserveSGB(),
+            pool.reservePOND()
+        ]);
+        if (reservePOND.gt(0)) {
+            pondToSgbRate = parseFloat(ethers.utils.formatEther(reserveSGB)) / parseFloat(ethers.utils.formatEther(reservePOND));
+        }
+        console.log('POND to SGB rate:', pondToSgbRate);
+    } catch (err) {
+        console.log('Could not get pool rate:', err.message);
     }
     
-    .header {
-        padding: 12px 16px;
+    // Load overall volume stats (convert POND to SGB equivalent)
+    let totalVolumeFormatted = '0 SGB';
+    try {
+        const [volumeSGB, volumePOND, sales] = await marketplace.getStats();
+        const sgbVol = parseFloat(ethers.utils.formatEther(volumeSGB));
+        const pondVol = parseFloat(ethers.utils.formatEther(volumePOND));
+        const totalVolume = sgbVol + (pondVol * pondToSgbRate);
+        console.log('Total volume:', totalVolume, '(SGB:', sgbVol, 'POND:', pondVol, ')');
+        totalVolumeFormatted = totalVolume > 0 ? formatNumber(totalVolume) + ' SGB' : '0 SGB';
+        document.getElementById('totalVolume').textContent = totalVolumeFormatted;
+    } catch (err) {
+        console.error('Error loading volume:', err);
     }
     
-    .balances {
-        display: none;
+    // Load floor for each collection in parallel using getActiveListings
+    await Promise.all(COLLECTIONS.map(async (col) => {
+        try {
+            // Fetch collection stats (volume, sales)
+            try {
+                const [colVolSGB, colVolPOND, colSales] = await marketplace.getCollectionStats(col.address);
+                const sgbVol = parseFloat(ethers.utils.formatEther(colVolSGB));
+                const pondVol = parseFloat(ethers.utils.formatEther(colVolPOND));
+                const collectionVolume = sgbVol + (pondVol * pondToSgbRate);
+                const volumeText = formatNumber(collectionVolume) + ' SGB';
+                
+                const volumeEl = document.querySelector(`.volume-stat[data-collection="${col.address}"]`);
+                if (volumeEl) volumeEl.textContent = volumeText;
+            } catch (err) {
+                console.log(`Could not fetch stats for ${col.name}:`, err.message);
+            }
+            
+            // Use new getActiveListings function - instant, no event scanning!
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
+            console.log(`${col.name}: ${activeTokenIds.length} active listings`);
+            
+            if (activeTokenIds.length === 0) return;
+            
+            // Check prices in parallel
+            const results = await Promise.all(activeTokenIds.map(async (tokenId) => {
+                try {
+                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
+                    if (!active) return null;
+                    
+                    const sgbPrice = priceSGB.gt(0) ? parseFloat(ethers.utils.formatEther(priceSGB)) : null;
+                    const pondPrice = pricePOND.gt(0) ? parseFloat(ethers.utils.formatEther(pricePOND)) : null;
+                    
+                    // Calculate SGB equivalent for comparison
+                    let sgbEquivalent = Infinity;
+                    let displayPrice = '';
+                    
+                    if (sgbPrice !== null && pondPrice !== null) {
+                        // Both prices set - use lowest
+                        const pondInSgb = pondPrice * pondToSgbRate;
+                        if (sgbPrice <= pondInSgb) {
+                            sgbEquivalent = sgbPrice;
+                            displayPrice = sgbPrice.toFixed(1) + ' SGB';
+                        } else {
+                            sgbEquivalent = pondInSgb;
+                            displayPrice = formatNumber(pondPrice) + ' POND';
+                        }
+                    } else if (sgbPrice !== null) {
+                        sgbEquivalent = sgbPrice;
+                        displayPrice = sgbPrice.toFixed(1) + ' SGB';
+                    } else if (pondPrice !== null) {
+                        sgbEquivalent = pondToSgbRate > 0 ? pondPrice * pondToSgbRate : pondPrice / 1000;
+                        displayPrice = formatNumber(pondPrice) + ' POND';
+                    }
+                    
+                    return { sgbEquivalent, displayPrice };
+                } catch {}
+                return null;
+            }));
+            
+            const validPrices = results.filter(p => p !== null && p.sgbEquivalent < Infinity);
+            
+            if (validPrices.length > 0) {
+                // Find lowest price
+                const floor = validPrices.reduce((min, p) => 
+                    p.sgbEquivalent < min.sgbEquivalent ? p : min
+                );
+                
+                const floorEl = document.querySelector(`.floor-price[data-collection="${col.address}"]`);
+                if (floorEl) floorEl.textContent = floor.displayPrice;
+            }
+        } catch (err) {
+            console.error(`Error loading floor for ${col.name}:`, err);
+        }
+    }));
+    
+    console.log('Floor loading complete');
+}
+
+async function loadUserNfts() {
+    if (!isConnected) {
+        document.getElementById('noNftsMsg').innerHTML = '<p>Connect wallet to view your NFTs</p>';
+        return;
     }
     
-    .main {
-        padding: 16px;
-        padding-bottom: 120px;
+    const grid = document.getElementById('myNftsGrid');
+    grid.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    
+    userNfts = {};
+    COLLECTIONS.forEach(col => userNfts[col.address] = []);
+    
+    // Run ALL queries in parallel - wallet NFTs, staked NFTs, listed NFTs
+    const [walletNfts, stakedNfts, listedNfts] = await Promise.all([
+        loadWalletNfts(),
+        loadStakedNftsForUser(),
+        loadListedNftsForUser()
+    ]);
+    
+    // Combine all
+    const allNfts = [
+        ...walletNfts.map(n => ({ ...n, isStaked: false, isListed: false })),
+        ...stakedNfts.map(n => ({ ...n, isStaked: true, isListed: false })),
+        ...listedNfts.map(n => ({ ...n, isStaked: false, isListed: true }))
+    ];
+    
+    // Render
+    if (allNfts.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No NFTs found</p></div>';
+    } else {
+        grid.innerHTML = '';
+        for (const nft of allNfts) {
+            grid.appendChild(createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed));
+        }
+    }
+}
+
+async function loadWalletNfts() {
+    const results = [];
+    
+    // Query all collections in parallel
+    const collectionPromises = COLLECTIONS.map(async (col) => {
+        const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
+        const nfts = [];
+        
+        try {
+            const balance = await contract.balanceOf(userAddress);
+            console.log(`${col.name}: balance = ${balance.toString()}`);
+            if (balance.eq(0)) return nfts;
+            
+            // Try enumerable - parallel fetch all at once
+            try {
+                // Test if enumerable is supported first
+                const testToken = await contract.tokenOfOwnerByIndex(userAddress, 0);
+                const firstId = testToken.toNumber();
+                userNfts[col.address].push(firstId);
+                nfts.push({ collection: col, tokenId: firstId });
+                
+                // If more than 1, get the rest
+                if (balance.gt(1)) {
+                    const indices = Array.from({ length: Math.min(balance.toNumber(), 100) - 1 }, (_, i) => i + 1);
+                    const tokens = await Promise.all(
+                        indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i))
+                    );
+                    for (const tokenId of tokens) {
+                        const id = tokenId.toNumber();
+                        userNfts[col.address].push(id);
+                        nfts.push({ collection: col, tokenId: id });
+                    }
+                }
+                console.log(`${col.name}: found ${nfts.length} via enumerable`);
+            } catch (enumErr) {
+                console.log(`${col.name}: not enumerable, using chunked transfer events`);
+                // Not enumerable - use chunked transfer events
+                const currentBlock = await provider.getBlockNumber();
+                const chunkSize = 5000;
+                const chunksToScan = 20;
+                const potentialTokens = new Set();
+                
+                const chunkPromises = [];
+                for (let i = 0; i < chunksToScan; i++) {
+                    const endBlock = currentBlock - (i * chunkSize);
+                    const startBlock = Math.max(0, endBlock - chunkSize);
+                    if (startBlock <= 0) break;
+                    
+                    chunkPromises.push(
+                        provider.getLogs({
+                            address: col.address,
+                            topics: [
+                                ethers.utils.id('Transfer(address,address,uint256)'),
+                                null,
+                                ethers.utils.hexZeroPad(userAddress, 32)
+                            ],
+                            fromBlock: startBlock,
+                            toBlock: endBlock
+                        }).catch(() => [])
+                    );
+                }
+                
+                const chunkResults = await Promise.all(chunkPromises);
+                chunkResults.forEach(logs => {
+                    logs.forEach(l => potentialTokens.add(parseInt(l.topics[3], 16)));
+                });
+                
+                console.log(`${col.name}: found ${potentialTokens.size} potential tokens from events`);
+                
+                // Check ownership in parallel
+                const tokenArray = [...potentialTokens];
+                const owners = await Promise.all(
+                    tokenArray.map(id => contract.ownerOf(id).catch(() => null))
+                );
+                
+                tokenArray.forEach((tokenId, i) => {
+                    if (owners[i] && owners[i].toLowerCase() === userAddress.toLowerCase()) {
+                        userNfts[col.address].push(tokenId);
+                        nfts.push({ collection: col, tokenId });
+                    }
+                });
+                console.log(`${col.name}: confirmed ${nfts.length} owned`);
+            }
+        } catch (err) {
+            console.error(`Error loading ${col.name}:`, err.message);
+        }
+        
+        return nfts;
+    });
+    
+    const allResults = await Promise.all(collectionPromises);
+    return allResults.flat();
+}
+
+async function loadStakedNftsForUser() {
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') return [];
+    
+    const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
+    const results = [];
+    
+    // Query all collections in parallel
+    const stakedPromises = COLLECTIONS.map(async (col) => {
+        try {
+            const tokens = await stakingContract.getStakedTokens(userAddress, col.address);
+            return tokens.map(t => ({ collection: col, tokenId: t.toNumber() }));
+        } catch {
+            return [];
+        }
+    });
+    
+    const allResults = await Promise.all(stakedPromises);
+    return allResults.flat();
+}
+
+async function loadListedNftsForUser() {
+    if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return [];
+    
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    const results = [];
+    
+    try {
+        // Check all collections for user's listings
+        for (const col of COLLECTIONS) {
+            const activeTokenIds = await marketplace.getActiveListings(col.address);
+            
+            // Check each listing to see if it belongs to user
+            const checks = await Promise.all(activeTokenIds.map(async (tokenId) => {
+                try {
+                    const [seller, , , active] = await marketplace.getListing(col.address, tokenId);
+                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                        return { 
+                            collection: col, 
+                            tokenId: tokenId.toNumber ? tokenId.toNumber() : Number(tokenId)
+                        };
+                    }
+                } catch {}
+                return null;
+            }));
+            
+            results.push(...checks.filter(Boolean));
+        }
+        
+        return results;
+    } catch (err) {
+        console.error('Error loading listings:', err.message);
+        return [];
+    }
+}
+
+async function loadStakedNfts() {
+    if (!isConnected) return;
+    
+    // Skip if staking contract not deployed
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        document.getElementById('myStakedCount').textContent = '0';
+        document.getElementById('myMultiplier').textContent = '1.0x';
+        document.getElementById('stakingRewards').textContent = '0 POND';
+        return;
     }
     
-    .featured-banner {
-        flex-direction: column;
-        text-align: center;
-        gap: 24px;
+    try {
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
+        
+        // Get user stats from contract
+        const stats = await stakingContract.getUserStats(userAddress);
+        const totalStaked = stats.totalStaked.toNumber();
+        const pendingPond = parseFloat(ethers.utils.formatEther(stats.pendingPond));
+        
+        // Multiplier: base 1.0x + 0.001x per NFT (1 basis point), capped at +1.0x
+        const nftBonus = Math.min(totalStaked, 1000); // Cap at 1000
+        const multiplier = 1.0 + (nftBonus * 0.001);
+        
+        document.getElementById('myStakedCount').textContent = totalStaked;
+        document.getElementById('myMultiplier').textContent = multiplier.toFixed(3) + 'x';
+        document.getElementById('stakingRewards').textContent = pendingPond.toFixed(4) + ' POND';
+        
+        // Load staked tokens for grid
+        const grid = document.getElementById('stakedNftsGrid');
+        grid.innerHTML = '';
+        
+        for (const col of COLLECTIONS) {
+            const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
+            stakedNfts[col.address] = stakedTokens.map(t => t.toNumber());
+            
+            for (const tokenId of stakedNfts[col.address]) {
+                const nftCard = createNftCard(col, tokenId, true);
+                grid.appendChild(nftCard);
+            }
+        }
+        
+        if (totalStaked === 0) {
+            grid.innerHTML = '<div class="empty-state"><p>No NFTs staked yet</p></div>';
+        }
+        
+        // Update governance
+        updateGovernancePower(0, totalStaked); // LP power loaded separately
+        
+    } catch (err) {
+        console.error('Load staked NFTs failed:', err);
+    }
+}
+
+async function loadLpPosition() {
+    if (!isConnected) return;
+    
+    try {
+        const pool = new ethers.Contract(CONTRACTS.pondPool, PONDPOOL_ABI, provider);
+        const info = await pool.getUserInfo(userAddress);
+        
+        const poolShareBps = info.poolShareBps.toNumber();
+        const sharePercent = (poolShareBps / 100).toFixed(2);
+        
+        document.getElementById('lpYourShare').textContent = sharePercent + '%';
+        
+        // Update governance with LP power
+        const stakedCount = Object.values(stakedNfts).reduce((sum, arr) => sum + arr.length, 0);
+        updateGovernancePower(poolShareBps, stakedCount);
+        
+    } catch (err) {
+        console.error('Load LP position failed:', err);
+    }
+}
+
+function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed) {
+    const card = document.createElement('div');
+    card.className = 'nft-card';
+    
+    // Use thumbnail URI if available (PNG), otherwise use art from metadata
+    let imageUrl = imageUrlOverride;
+    if (!imageUrl) {
+        if (collection.thumbnailUri) {
+            // Use fast PNG thumbnails
+            imageUrl = collection.thumbnailUri + tokenId + '.png';
+        } else {
+            // Get from metadata
+            const metadata = collectionMetadata[collection.address];
+            if (metadata && metadata[tokenId]) {
+                imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+            }
+            if (!imageUrl) {
+                // Fallback to baseUri
+                imageUrl = collection.baseUri + tokenId + '.png';
+            }
+        }
     }
     
-    .featured-stats {
-        width: 100%;
-        justify-content: space-around;
+    // Determine badge
+    let badge = '';
+    if (isStaked) {
+        badge = '<div class="staked-badge">STAKED</div>';
+    } else if (isListed) {
+        badge = '<div class="listed-badge">LISTED</div>';
     }
     
-    .collections-layout {
-        grid-template-columns: 1fr;
+    card.innerHTML = `
+        <div class="nft-image">
+            <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy" 
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+            ${badge}
+        </div>
+        <div class="nft-info">
+            <div class="nft-name">${collection.name} #${tokenId}</div>
+            <div class="nft-collection">${collection.symbol}</div>
+        </div>
+    `;
+    
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => openNftModal(collection, tokenId, isStaked, imageUrl));
+    
+    return card;
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tab, updateHash = true) {
+    // If viewing a collection and switching to collections, go back to main view
+    if (tab === 'collections' && currentCollectionView) {
+        closeCollectionView();
+        return;
     }
     
-    .activity-feed {
-        position: static;
-        max-height: 500px;
-        order: -1; /* Show activity feed before collections on mobile */
+    currentTab = tab;
+    
+    // Update URL hash
+    if (updateHash) {
+        history.pushState(null, '', `#${tab}`);
     }
     
-    .collections-grid {
-        grid-template-columns: 1fr;
-        justify-content: stretch;
+    // Update nav buttons
+    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    
+    // Update content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tab}`);
+    });
+}
+
+// ==================== COLLECTION VIEW ====================
+let collectionLoadOffset = 0;
+let collectionViewMode = 'all';
+let isLoadingMore = false;
+let collectionObserver = null;
+
+function openCollectionView(collection) {
+    currentCollectionView = collection;
+    collectionLoadOffset = 0;
+    collectionViewMode = 'all';
+    isLoadingMore = false;
+    
+    const grid = document.getElementById('collectionsGrid');
+    grid.style.display = 'block';
+    
+    grid.innerHTML = `
+        <div class="collection-detail-view">
+            <div class="collection-detail-header">
+                <button class="back-btn" onclick="closeCollectionView()">← Back</button>
+                <div class="collection-detail-info">
+                    <img src="${collection.image}" class="collection-detail-avatar" alt="${collection.name}"
+                         onerror="this.style.display='none'">
+                    <div class="collection-detail-text">
+                        <h2>${collection.name}</h2>
+                        <p>${collection.description}</p>
+                        <div class="collection-detail-stats">
+                            <span>${formatNumber(collection.supply)} items</span>
+                            <span class="multiplier-badge">🔥 LP Boost Eligible</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="collection-detail-filters">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="all" onclick="switchCollectionView('all')">All</button>
+                    <button class="view-btn" data-view="listings" onclick="switchCollectionView('listings')">Listings</button>
+                </div>
+                <input type="text" placeholder="Jump to ID..." class="search-input" id="nftSearchInput">
+                <button class="jump-btn" onclick="jumpToTokenId()">Go</button>
+                <select id="listingSortSelect" onchange="sortListings(this.value)">
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="id-asc">ID: Low to High</option>
+                    <option value="id-desc">ID: High to Low</option>
+                </select>
+            </div>
+            <div class="collection-nfts-grid" id="collectionNftsGrid">
+                <div class="empty-state"><p>Loading...</p></div>
+            </div>
+            <div id="scrollSentinel" style="height: 1px;"></div>
+        </div>
+    `;
+    
+    loadCollectionNfts(collection);
+    setupInfiniteScroll();
+    
+    document.getElementById('nftSearchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') jumpToTokenId();
+    });
+}
+
+function setupInfiniteScroll() {
+    if (collectionObserver) collectionObserver.disconnect();
+    
+    collectionObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore && collectionViewMode === 'all') {
+            loadMoreNfts();
+        }
+    }, { rootMargin: '200px' });
+    
+    const sentinel = document.getElementById('scrollSentinel');
+    if (sentinel) collectionObserver.observe(sentinel);
+}
+
+function switchCollectionView(mode) {
+    collectionViewMode = mode;
+    collectionLoadOffset = 0;
+    
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+    
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    loadCollectionNfts(currentCollectionView);
+}
+
+async function jumpToTokenId() {
+    const input = document.getElementById('nftSearchInput');
+    const tokenId = parseInt(input.value);
+    
+    if (isNaN(tokenId) || tokenId < 1 || tokenId > currentCollectionView.supply) {
+        showToast('Enter a valid token ID (1-' + currentCollectionView.supply + ')', 'error');
+        return;
     }
     
-    .collection-card {
-        max-width: 100%;
+    openNftModal(currentCollectionView, tokenId, false, null);
+}
+
+function closeCollectionView() {
+    if (collectionObserver) collectionObserver.disconnect();
+    currentCollectionView = null;
+    loadCollections();
+}
+
+async function loadCollectionNfts(collection, append = false) {
+    const grid = document.getElementById('collectionNftsGrid');
+    const metadata = collectionMetadata[collection.address];
+    
+    if (!append) grid.innerHTML = '';
+    
+    if (collectionViewMode === 'listings') {
+        await loadListedNfts(collection, grid);
+        return;
     }
     
-    .modal-body {
-        grid-template-columns: 1fr;
+    if (!metadata) {
+        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
+        return;
     }
     
-    .staking-stats,
-    .lp-info-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    .my-nfts-grid,
-    .staked-nfts-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+    // Fetch active listings first
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    
+    let listingData = {};
+    let listedTokenIds = [];
+    try {
+        const activeTokenIds = await marketplace.getActiveListings(collection.address);
+        listedTokenIds = activeTokenIds.map(t => t.toNumber ? t.toNumber() : Number(t));
+        
+        // Get prices for listed items
+        const listingResults = await Promise.all(activeTokenIds.map(async (tokenId) => {
+            try {
+                const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+                if (active) {
+                    const id = tokenId.toNumber ? tokenId.toNumber() : Number(tokenId);
+                    let sortPrice = 0;
+                    if (priceSGB.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(priceSGB));
+                    else if (pricePOND.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(pricePOND)) / 1000;
+                    
+                    let priceText = '';
+                    if (priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(priceSGB)).toFixed(2) + ' SGB';
+                    if (pricePOND.gt(0)) {
+                        if (priceText) priceText += ' / ';
+                        priceText += formatNumber(parseFloat(ethers.utils.formatEther(pricePOND))) + ' POND';
+                    }
+                    
+                    return { id, sortPrice, priceText };
+                }
+            } catch {}
+            return null;
+        }));
+        
+        listingResults.filter(Boolean).forEach(l => {
+            listingData[l.id] = l;
+        });
+    } catch (err) {
+        console.log('Could not fetch listings:', err.message);
     }
     
-    .header-right {
-        gap: 8px;
+    // Sort order from dropdown
+    const sortSelect = document.getElementById('listingSortSelect');
+    const sortBy = sortSelect ? sortSelect.value : 'price-asc';
+    
+    // Build token ID list based on sort
+    let tokenIds = [];
+    
+    if (sortBy === 'price-asc' || sortBy === 'price-desc') {
+        // Price sort: Listed items first (sorted by price), then unlisted by ID
+        const sortedListings = Object.values(listingData).sort((a, b) => 
+            sortBy === 'price-asc' ? a.sortPrice - b.sortPrice : b.sortPrice - a.sortPrice
+        );
+        const listedIds = sortedListings.map(l => l.id);
+        
+        const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
+        const unlistedIds = allTokenIds.filter(id => !listedTokenIds.includes(id));
+        
+        tokenIds = [...listedIds, ...unlistedIds];
+    } else {
+        // ID sort
+        const allTokenIds = Object.keys(metadata).map(id => parseInt(id));
+        tokenIds = sortBy === 'id-desc' 
+            ? allTokenIds.sort((a, b) => b - a)
+            : allTokenIds.sort((a, b) => a - b);
     }
     
-    .connect-btn {
-        padding: 8px 12px;
-        font-size: 12px;
+    // Paginate
+    const pageSize = 100;
+    const pageTokenIds = tokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
+    
+    if (pageTokenIds.length === 0) return;
+    
+    for (const tokenId of pageTokenIds) {
+        const nftData = metadata[tokenId];
+        const card = document.createElement('div');
+        card.className = 'nft-card';
+        card.dataset.tokenId = tokenId;
+        
+        const listing = listingData[tokenId];
+        card.dataset.price = listing ? listing.sortPrice : 0;
+        
+        let imageUrl = collection.thumbnailUri 
+            ? collection.thumbnailUri + tokenId + '.png'
+            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+        
+        const listedBadge = listing ? '<div class="listed-badge">LISTED</div>' : '';
+        const priceDisplay = listing ? `<div class="nft-price">${listing.priceText}</div>` : '';
+        
+        card.innerHTML = `
+            <div class="nft-image">
+                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+                ${listedBadge}
+            </div>
+            <div class="nft-info">
+                <div class="nft-name">${collection.name} #${tokenId}</div>
+                ${priceDisplay || `<div class="nft-collection">${collection.symbol}</div>`}
+            </div>
+        `;
+        
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
+        grid.appendChild(card);
+    }
+    
+    collectionLoadOffset += pageSize;
+}
+
+async function loadMoreNfts() {
+    if (isLoadingMore || !currentCollectionView) return;
+    isLoadingMore = true;
+    await loadCollectionNfts(currentCollectionView, true);
+    isLoadingMore = false;
+}
+
+async function loadListedNfts(collection, grid) {
+    grid.innerHTML = '<div class="empty-state"><p>Loading listings...</p></div>';
+    
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    const metadata = collectionMetadata[collection.address];
+    
+    if (!metadata) {
+        grid.innerHTML = '<div class="empty-state"><p>Could not load collection data</p></div>';
+        return;
+    }
+    
+    // Use new getActiveListings - instant!
+    const tokenIds = await marketplace.getActiveListings(collection.address);
+    
+    if (tokenIds.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
+        return;
+    }
+    
+    // Get listing details in parallel
+    const listings = await Promise.all(tokenIds.map(async (tokenId) => {
+        try {
+            const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+            if (active) return { tokenId: tokenId.toNumber ? tokenId.toNumber() : Number(tokenId), seller, priceSGB, pricePOND };
+        } catch {}
+        return null;
+    }));
+    
+    const activeListings = listings.filter(Boolean);
+    grid.innerHTML = '';
+    
+    if (activeListings.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
+        return;
+    }
+    
+    // Add sortPrice to each listing and sort
+    activeListings.forEach(listing => {
+        let sortPrice = 0;
+        if (listing.priceSGB.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(listing.priceSGB));
+        else if (listing.pricePOND.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(listing.pricePOND)) / 1000;
+        listing.sortPrice = sortPrice;
+    });
+    
+    const sortSelect = document.getElementById('listingSortSelect');
+    const sortBy = sortSelect ? sortSelect.value : 'price-asc';
+    
+    activeListings.sort((a, b) => {
+        switch (sortBy) {
+            case 'price-asc': return a.sortPrice - b.sortPrice;
+            case 'price-desc': return b.sortPrice - a.sortPrice;
+            case 'id-asc': return a.tokenId - b.tokenId;
+            case 'id-desc': return b.tokenId - a.tokenId;
+            default: return a.sortPrice - b.sortPrice;
+        }
+    });
+    
+    for (const listing of activeListings) {
+        const tokenId = listing.tokenId;
+        const nftData = metadata[tokenId];
+        
+        let imageUrl = collection.thumbnailUri
+            ? collection.thumbnailUri + tokenId + '.png'
+            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+        
+        let priceText = '';
+        if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
+        if (listing.pricePOND.gt(0)) {
+            if (priceText) priceText += ' / ';
+            priceText += formatNumber(parseFloat(ethers.utils.formatEther(listing.pricePOND))) + ' POND';
+        }
+        
+        const card = document.createElement('div');
+        card.className = 'nft-card';
+        card.dataset.tokenId = tokenId;
+        card.dataset.price = listing.sortPrice;
+        
+        card.innerHTML = `
+            <div class="nft-image">
+                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
+                <div class="listed-badge">LISTED</div>
+            </div>
+            <div class="nft-info">
+                <div class="nft-name">${collection.name} #${tokenId}</div>
+                <div class="nft-price">${priceText}</div>
+            </div>
+        `;
+        
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
+        grid.appendChild(card);
     }
 }
 
-/* ==================== LISTING MODAL ==================== */
-.listing-modal {
-    max-width: 420px;
-    width: 90%;
+function filterCollectionNfts(collection, searchTerm) {
+    const grid = document.getElementById('collectionNftsGrid');
+    const cards = grid.querySelectorAll('.nft-card');
+    
+    cards.forEach(card => {
+        const tokenId = card.dataset.tokenId;
+        if (!searchTerm || tokenId.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
 }
 
-.listing-modal-body {
-    padding: 32px;
+function sortCollectionNfts(collection, sortBy) {
+    const grid = document.getElementById('collectionNftsGrid');
+    const cards = Array.from(grid.querySelectorAll('.nft-card'));
+    
+    cards.sort((a, b) => {
+        const idA = parseInt(a.dataset.tokenId);
+        const idB = parseInt(b.dataset.tokenId);
+        
+        switch (sortBy) {
+            case 'id-asc':
+                return idA - idB;
+            case 'id-desc':
+                return idB - idA;
+            default:
+                return idA - idB;
+        }
+    });
+    
+    cards.forEach(card => grid.appendChild(card));
 }
 
-.listing-modal-header {
-    text-align: center;
-    margin-bottom: 28px;
+function sortListings(sortBy) {
+    if (!currentCollectionView) return;
+    
+    // Reload with new sort order
+    collectionLoadOffset = 0;
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    
+    if (collectionViewMode === 'listings') {
+        loadListedNfts(currentCollectionView, document.getElementById('collectionNftsGrid'));
+    } else {
+        loadCollectionNfts(currentCollectionView);
+    }
 }
 
-.listing-modal-header h2 {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: white;
+function filterCollections(filter) {
+    // For now just reload - can add more collections later
+    loadCollections();
 }
 
-.listing-modal-header p {
-    color: var(--primary);
-    font-size: 14px;
-    font-weight: 500;
+function sortCollections(sortBy) {
+    console.log('Sort by:', sortBy);
 }
 
-.listing-input-group {
-    margin-bottom: 20px;
+// ==================== NFT MODAL ====================
+async function openNftModal(collection, tokenId, isStaked, imageUrl) {
+    const modal = document.getElementById('nftModal');
+    
+    // Use provided imageUrl or construct it
+    if (!imageUrl) {
+        const metadata = collectionMetadata[collection.address];
+        if (metadata && metadata[tokenId]) {
+            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+        }
+        if (!imageUrl) {
+            if (collection.baseUri.includes('ipfs://')) {
+                imageUrl = collection.baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/') + tokenId + '.png';
+            } else if (collection.baseUri.endsWith('/')) {
+                imageUrl = collection.baseUri + tokenId + '.png';
+            } else {
+                imageUrl = collection.baseUri;
+            }
+        }
+    }
+    
+    document.getElementById('modalNftImage').src = imageUrl;
+    document.getElementById('modalNftName').textContent = `${collection.name} #${tokenId}`;
+    document.getElementById('modalCollection').textContent = collection.name;
+    
+    // Clear traits (would load from metadata)
+    const traitsEl = document.getElementById('modalTraits');
+    const metadata = collectionMetadata[collection.address];
+    if (metadata && metadata[tokenId] && metadata[tokenId].traits) {
+        traitsEl.innerHTML = `<div class="trait-item"><span>Traits</span><span>${metadata[tokenId].traits}</span></div>`;
+    } else {
+        traitsEl.innerHTML = '';
+    }
+    
+    const priceEl = document.getElementById('modalPrice');
+    const actionsEl = document.getElementById('modalActions');
+    
+    // Check if listed on marketplace
+    let listing = null;
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+        if (active) {
+            listing = { seller, priceSGB, pricePOND };
+        }
+    } catch (err) {
+        console.log('Could not fetch listing:', err.message);
+    }
+    
+    if (listing) {
+        // NFT is listed
+        const sgbPrice = listing.priceSGB.gt(0) ? parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB' : null;
+        const pondPrice = listing.pricePOND.gt(0) ? parseFloat(ethers.utils.formatEther(listing.pricePOND)).toFixed(0) + ' POND' : null;
+        
+        let priceText = '';
+        if (sgbPrice && pondPrice) priceText = `${sgbPrice} or ${pondPrice}`;
+        else if (sgbPrice) priceText = sgbPrice;
+        else if (pondPrice) priceText = pondPrice;
+        
+        priceEl.textContent = priceText;
+        
+        const isOwner = isConnected && listing.seller.toLowerCase() === userAddress.toLowerCase();
+        
+        if (isOwner) {
+            // Owner can cancel listing
+            actionsEl.innerHTML = `
+                <button class="modal-btn secondary" onclick="cancelListing('${collection.address}', ${tokenId})">Cancel Listing</button>
+            `;
+        } else {
+            // Others can buy
+            let buyButtons = '';
+            if (listing.priceSGB.gt(0)) {
+                buyButtons += `<button class="modal-btn primary" onclick="buyNft('${collection.address}', ${tokenId}, false)">Buy with SGB</button>`;
+            }
+            if (listing.pricePOND.gt(0)) {
+                buyButtons += `<button class="modal-btn primary" onclick="buyNft('${collection.address}', ${tokenId}, true)">Buy with POND</button>`;
+            }
+            buyButtons += `<button class="modal-btn secondary" onclick="showOfferForm('${collection.address}', ${tokenId})">Make Offer</button>`;
+            actionsEl.innerHTML = buyButtons;
+        }
+    } else if (isStaked) {
+        // User's staked NFT
+        priceEl.textContent = 'Staked';
+        actionsEl.innerHTML = `
+            <button class="modal-btn primary" onclick="unstakeNft('${collection.address}', ${tokenId})">Unstake</button>
+        `;
+    } else {
+        // Check if user owns this NFT
+        let isOwner = false;
+        if (isConnected) {
+            try {
+                const nftContract = new ethers.Contract(collection.address, ERC721_ABI, provider);
+                const owner = await nftContract.ownerOf(tokenId);
+                isOwner = owner.toLowerCase() === userAddress.toLowerCase();
+            } catch (err) {
+                console.log('Could not check ownership:', err.message);
+            }
+        }
+        
+        priceEl.textContent = 'Not Listed';
+        
+        if (isOwner) {
+            actionsEl.innerHTML = `
+                <button class="modal-btn primary" onclick="stakeNft('${collection.address}', ${tokenId})">Stake for LP Boost</button>
+                <button class="modal-btn secondary" onclick="listNft('${collection.address}', ${tokenId})">List for Sale</button>
+            `;
+        } else if (isConnected) {
+            actionsEl.innerHTML = `<button class="modal-btn secondary" onclick="showOfferForm('${collection.address}', ${tokenId})">Make Offer</button>`;
+        } else {
+            actionsEl.innerHTML = `<p style="color: var(--text-muted);">Connect wallet to make offer</p>`;
+        }
+    }
+    
+    // Load offers for this NFT
+    const historyEl = document.getElementById('historyList');
+    historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Loading offers...</div>';
+    
+    // Check if user is owner or seller
+    let canAcceptOffers = false;
+    if (isConnected) {
+        try {
+            const nftContract = new ethers.Contract(collection.address, ERC721_ABI, provider);
+            const owner = await nftContract.ownerOf(tokenId);
+            canAcceptOffers = owner.toLowerCase() === userAddress.toLowerCase() || 
+                              (listing && listing.seller.toLowerCase() === userAddress.toLowerCase());
+        } catch {}
+    }
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        const offers = await marketplace.getOffers(collection.address, tokenId);
+        
+        const validOffers = offers.filter(o => o.buyer !== '0x0000000000000000000000000000000000000000');
+        
+        if (validOffers.length === 0) {
+            historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No offers yet</div>';
+        } else {
+            let offersHtml = '<div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Offers</div>';
+            
+            for (let i = 0; i < offers.length; i++) {
+                const offer = offers[i];
+                if (offer.buyer === '0x0000000000000000000000000000000000000000') continue; // Cancelled
+                
+                const expiry = new Date(offer.expiry.toNumber() * 1000);
+                const expired = expiry < new Date();
+                
+                let amountText = '';
+                if (offer.amountSGB.gt(0)) amountText += parseFloat(ethers.utils.formatEther(offer.amountSGB)).toFixed(2) + ' SGB';
+                if (offer.amountPOND.gt(0)) {
+                    if (amountText) amountText += ' + ';
+                    amountText += formatNumber(parseFloat(ethers.utils.formatEther(offer.amountPOND))) + ' POND';
+                }
+                
+                offersHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="color: white; font-weight: 500;">${amountText}</div>
+                            <div style="color: var(--text-muted); font-size: 11px;">
+                                ${formatAddress(offer.buyer)} • ${expired ? 'Expired' : 'Expires ' + expiry.toLocaleDateString()}
+                            </div>
+                        </div>
+                        <div style="flex-shrink: 0;">
+                        ${!expired && canAcceptOffers ? 
+                            `<button class="modal-btn primary" style="padding: 6px 16px; font-size: 12px;" onclick="acceptOffer('${collection.address}', ${tokenId}, ${i})">Accept</button>` : 
+                            ''}
+                        ${!expired && isConnected && offer.buyer.toLowerCase() === userAddress.toLowerCase() ? 
+                            `<button class="modal-btn secondary" style="padding: 6px 16px; font-size: 12px;" onclick="cancelOffer('${collection.address}', ${tokenId}, ${i})">Cancel</button>` : 
+                            ''}
+                        </div>
+                    </div>
+                `;
+            }
+            historyEl.innerHTML = offersHtml;
+        }
+    } catch (err) {
+        console.log('Could not load offers:', err.message);
+        historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No offers yet</div>';
+    }
+    
+    modal.classList.add('active');
 }
 
-.listing-input-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+function closeModal() {
+    document.getElementById('nftModal').classList.remove('active');
 }
 
-.listing-input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
+// ==================== STAKING ACTIONS ====================
+async function stakeNft(collectionAddress, tokenId) {
+    if (!isConnected) {
+        showToast('Connect wallet first', 'error');
+        return;
+    }
+    
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        showToast('Staking contract coming soon', 'error');
+        return;
+    }
+    
+    // Get button and set loading state
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
+    try {
+        // Check if approval needed
+        const nftContract = new ethers.Contract(collectionAddress, ERC721_ABI, signer);
+        const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
+        
+        if (!isApproved) {
+            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Approving...</button>`;
+            const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
+            await approveTx.wait();
+        }
+        
+        // Stake
+        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Staking...</button>`;
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const tx = await stakingContract.stake(collectionAddress, tokenId);
+        await tx.wait();
+        
+        showToast('NFT staked successfully!');
+        closeModal();
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Stake failed:', err);
+        showToast('Staking failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml; // Restore buttons on error
+    }
 }
 
-.listing-input-wrap input {
-    width: 100%;
-    padding: 14px 70px 14px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    transition: border-color 0.2s, box-shadow 0.2s;
+async function unstakeNft(collectionAddress, tokenId) {
+    if (!isConnected) return;
+    
+    // Get button and set loading state
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
+    try {
+        actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Unstaking...</button>`;
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const tx = await stakingContract.unstake(collectionAddress, tokenId);
+        await tx.wait();
+        
+        showToast('NFT unstaked successfully!');
+        closeModal();
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Unstake failed:', err);
+        showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml; // Restore button on error
+    }
 }
 
-.listing-input-wrap input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+async function stakeAllNfts() {
+    if (!isConnected) {
+        showToast('Connect wallet first', 'error');
+        return;
+    }
+    
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        showToast('Staking contract coming soon', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Staking all NFTs...');
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        
+        for (const col of COLLECTIONS) {
+            const tokens = userNfts[col.address] || [];
+            if (tokens.length === 0) continue;
+            
+            // Approve if needed
+            const nftContract = new ethers.Contract(col.address, ERC721_ABI, signer);
+            const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.nftStaking);
+            
+            if (!isApproved) {
+                showToast(`Approving ${col.name}...`);
+                const approveTx = await nftContract.setApprovalForAll(CONTRACTS.nftStaking, true);
+                await approveTx.wait();
+            }
+            
+            // Stake batch
+            showToast(`Staking ${tokens.length} ${col.name}...`);
+            const tx = await stakingContract.stakeBatch(col.address, tokens);
+            await tx.wait();
+        }
+        
+        showToast('All NFTs staked!');
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Stake all failed:', err);
+        showToast('Staking failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
-.listing-input-wrap input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.5;
+async function unstakeAllNfts() {
+    if (!isConnected) return;
+    
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        showToast('Staking contract coming soon', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Unstaking all NFTs...');
+        
+        const btn = document.getElementById('unstakeAllBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Unstaking...';
+        btn.disabled = true;
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const tx = await stakingContract.unstakeAll();
+        await tx.wait();
+        
+        showToast('All NFTs unstaked!');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        await loadUserNfts();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Unstake all failed:', err);
+        showToast('Unstaking failed: ' + (err.reason || err.message), 'error');
+        const btn = document.getElementById('unstakeAllBtn');
+        if (btn) {
+            btn.textContent = 'Unstake All';
+            btn.disabled = false;
+        }
+    }
 }
 
-.input-suffix {
-    position: absolute;
-    right: 16px;
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 600;
-    pointer-events: none;
+async function claimStakingRewards() {
+    if (!isConnected) return;
+    
+    if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') {
+        showToast('Staking contract coming soon', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('claimStakeRewardsBtn');
+    const originalText = btn.textContent;
+    
+    try {
+        btn.textContent = 'Claiming...';
+        btn.disabled = true;
+        
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const tx = await stakingContract.claimRewards();
+        await tx.wait();
+        
+        showToast('Rewards claimed!');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        await loadBalances();
+        await loadStakedNfts();
+        
+    } catch (err) {
+        console.error('Claim failed:', err);
+        showToast('Claim failed: ' + (err.reason || err.message), 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
-.input-hint {
-    display: block;
-    margin-top: 6px;
-    color: var(--text-muted);
-    font-size: 11px;
-    opacity: 0.7;
+// ==================== MARKETPLACE ACTIONS ====================
+let currentListingNft = null;
+
+function listNft(collectionAddress, tokenId) {
+    if (!isConnected) {
+        showToast('Connect wallet first', 'error');
+        return;
+    }
+    
+    // Store current NFT being listed
+    currentListingNft = { collectionAddress, tokenId };
+    
+    // Find collection info
+    const collection = COLLECTIONS.find(c => c.address.toLowerCase() === collectionAddress.toLowerCase());
+    
+    // Update modal
+    document.getElementById('listingNftName').textContent = `${collection?.name || 'NFT'} #${tokenId}`;
+    document.getElementById('listingPriceSGB').value = '';
+    document.getElementById('listingPricePOND').value = '';
+    
+    // Show listing modal
+    document.getElementById('listingModal').classList.add('active');
 }
 
-.listing-fee-note {
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 10px;
-    padding: 12px 16px;
-    text-align: center;
-    margin: 24px 0;
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 500;
+function closeListingModal() {
+    document.getElementById('listingModal').classList.remove('active');
+    currentListingNft = null;
 }
 
-.listing-fee-note span {
-    margin-right: 6px;
+async function confirmListing() {
+    if (!currentListingNft) return;
+    
+    const priceSGBInput = document.getElementById('listingPriceSGB').value;
+    const pricePONDInput = document.getElementById('listingPricePOND').value;
+    
+    const priceSGB = priceSGBInput ? ethers.utils.parseEther(priceSGBInput) : ethers.BigNumber.from(0);
+    const pricePOND = pricePONDInput ? ethers.utils.parseEther(pricePONDInput) : ethers.BigNumber.from(0);
+    
+    if (priceSGB.isZero() && pricePOND.isZero()) {
+        showToast('Set at least one price', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('confirmListingBtn');
+    const originalText = btn.textContent;
+    
+    try {
+        // Check approval
+        const nftContract = new ethers.Contract(currentListingNft.collectionAddress, ERC721_ABI, signer);
+        const isApproved = await nftContract.isApprovedForAll(userAddress, CONTRACTS.marketplace);
+        
+        if (!isApproved) {
+            btn.textContent = 'Approving...';
+            btn.disabled = true;
+            const approveTx = await nftContract.setApprovalForAll(CONTRACTS.marketplace, true);
+            await approveTx.wait();
+        }
+        
+        // List NFT
+        btn.textContent = 'Listing...';
+        btn.disabled = true;
+        
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.list(
+            currentListingNft.collectionAddress,
+            currentListingNft.tokenId,
+            priceSGB,
+            pricePOND
+        );
+        await tx.wait();
+        
+        showToast('NFT listed successfully!');
+        closeListingModal();
+        closeModal();
+        await loadUserNfts();
+        
+    } catch (err) {
+        console.error('Listing failed:', err);
+        showToast('Listing failed: ' + (err.reason || err.message), 'error');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
-.listing-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
+async function buyNft(collectionAddress, tokenId, payWithPOND) {
+    if (!isConnected) {
+        showToast('Connect wallet first', 'error');
+        return;
+    }
+    
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collectionAddress, tokenId);
+        
+        if (!active) {
+            showToast('Listing no longer active', 'error');
+            return;
+        }
+        
+        if (payWithPOND) {
+            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Approving POND...</button>`;
+            
+            // Approve POND
+            const pondContract = new ethers.Contract(CONTRACTS.pondToken, ERC20_ABI, signer);
+            const allowance = await pondContract.allowance(userAddress, CONTRACTS.marketplace);
+            
+            if (allowance.lt(pricePOND)) {
+                const approveTx = await pondContract.approve(CONTRACTS.marketplace, pricePOND);
+                await approveTx.wait();
+            }
+            
+            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Buying...</button>`;
+            const tx = await marketplace.buyWithPOND(collectionAddress, tokenId);
+            await tx.wait();
+        } else {
+            actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Buying...</button>`;
+            const tx = await marketplace.buyWithSGB(collectionAddress, tokenId, { value: priceSGB });
+            await tx.wait();
+        }
+        
+        showToast('NFT purchased successfully!');
+        closeModal();
+        await loadUserNfts();
+        
+    } catch (err) {
+        console.error('Purchase failed:', err);
+        showToast('Purchase failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml;
+    }
 }
 
-.listing-actions .modal-btn {
-    flex: 1;
-    padding: 14px 20px;
-    font-size: 15px;
-    font-weight: 600;
+async function cancelListing(collectionAddress, tokenId) {
+    if (!isConnected) return;
+    
+    const actionsEl = document.getElementById('modalActions');
+    
+    try {
+        actionsEl.innerHTML = `<button class="modal-btn" disabled>Cancelling...</button>`;
+        
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.unlist(collectionAddress, tokenId);
+        await tx.wait();
+        
+        showToast('Listing cancelled!');
+        closeModal();
+        await loadUserNfts();
+        
+    } catch (err) {
+        console.error('Cancel failed:', err);
+        showToast('Cancel failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
-/* Listed badge */
-.listed-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    z-index: 2;
+function showOfferForm(collectionAddress, tokenId) {
+    const actionsEl = document.getElementById('modalActions');
+    actionsEl.innerHTML = `
+        <div class="offer-form" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="offerSGB" placeholder="SGB amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; min-width: 0;">
+                <input type="number" id="offerPOND" placeholder="POND amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; min-width: 0;">
+            </div>
+            <select id="offerDuration" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; width: 100%;">
+                <option value="86400">1 day</option>
+                <option value="259200">3 days</option>
+                <option value="604800" selected>7 days</option>
+                <option value="2592000">30 days</option>
+            </select>
+            <div style="display: flex; gap: 10px;">
+                <button class="modal-btn primary" style="flex: 1;" onclick="submitOffer('${collectionAddress}', ${tokenId})">Submit Offer</button>
+                <button class="modal-btn secondary" style="flex: 1;" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    `;
 }
 
-/* ==================== COLLECTION VIEW ENHANCEMENTS ==================== */
-.view-toggle {
-    display: flex;
-    gap: 0;
-    background: var(--bg-card);
-    border-radius: 8px;
-    padding: 4px;
-    border: 1px solid var(--border);
+async function submitOffer(collectionAddress, tokenId) {
+    if (!isConnected) return;
+    
+    const sgbAmount = document.getElementById('offerSGB').value || '0';
+    const pondAmount = document.getElementById('offerPOND').value || '0';
+    const duration = document.getElementById('offerDuration').value;
+    
+    if (parseFloat(sgbAmount) <= 0 && parseFloat(pondAmount) <= 0) {
+        showToast('Enter an offer amount', 'error');
+        return;
+    }
+    
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const pondWei = ethers.utils.parseEther(pondAmount || '0');
+        const sgbWei = ethers.utils.parseEther(sgbAmount || '0');
+        
+        // Approve POND if needed
+        if (pondWei.gt(0)) {
+            actionsEl.innerHTML = `<button class="modal-btn" disabled>Approving POND...</button>`;
+            const pondContract = new ethers.Contract(CONTRACTS.pondToken, ERC20_ABI, signer);
+            const allowance = await pondContract.allowance(userAddress, CONTRACTS.marketplace);
+            
+            if (allowance.lt(pondWei)) {
+                const approveTx = await pondContract.approve(CONTRACTS.marketplace, pondWei);
+                await approveTx.wait();
+            }
+        }
+        
+        actionsEl.innerHTML = `<button class="modal-btn" disabled>Submitting Offer...</button>`;
+        
+        const tx = await marketplace.makeOffer(collectionAddress, tokenId, pondWei, duration, { value: sgbWei });
+        await tx.wait();
+        
+        showToast('Offer submitted!');
+        closeModal();
+        
+    } catch (err) {
+        console.error('Offer failed:', err);
+        showToast('Offer failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml;
+    }
 }
 
-.view-btn {
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+async function acceptOffer(collectionAddress, tokenId, offerIndex) {
+    if (!isConnected) return;
+    
+    try {
+        showToast('Accepting offer...');
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.acceptOffer(collectionAddress, tokenId, offerIndex);
+        await tx.wait();
+        
+        showToast('Offer accepted! NFT sold.');
+        closeModal();
+        await loadUserNfts();
+        
+    } catch (err) {
+        console.error('Accept offer failed:', err);
+        showToast('Accept failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
-.view-btn:hover {
-    color: white;
+async function cancelOffer(collectionAddress, tokenId, offerIndex) {
+    if (!isConnected) return;
+    
+    try {
+        showToast('Cancelling offer...');
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.cancelOffer(collectionAddress, tokenId, offerIndex);
+        await tx.wait();
+        
+        showToast('Offer cancelled, funds refunded.');
+        closeModal();
+        
+    } catch (err) {
+        console.error('Cancel offer failed:', err);
+        showToast('Cancel failed: ' + (err.reason || err.message), 'error');
+    }
 }
 
-.view-btn.active {
-    background: var(--primary);
-    color: white;
+// ==================== GOVERNANCE ====================
+function updateGovernancePower(lpShareBps, stakedNftCount) {
+    const lpPower = lpShareBps; // 1 bps = 1 power
+    const nftPower = stakedNftCount * 100; // 100 power per NFT
+    const totalPower = lpPower + nftPower;
+    
+    document.getElementById('govVotingPower').textContent = formatNumber(totalPower);
+    document.getElementById('govLpPower').textContent = formatNumber(lpPower);
+    document.getElementById('govNftPower').textContent = formatNumber(nftPower);
 }
 
-.jump-btn {
-    padding: 10px 16px;
-    background: var(--primary);
-    border: none;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
+// ==================== UTILITIES ====================
+function formatAddress(address) {
+    return address.slice(0, 6) + '...' + address.slice(-4);
 }
 
-.jump-btn:hover {
-    background: #059669;
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toLocaleString();
 }
 
-.load-more-container {
-    display: flex;
-    justify-content: center;
-    padding: 32px 0;
-}
-
-.load-more-btn {
-    padding: 14px 40px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: 10px;
-    transition: all 0.2s;
-}
-
-.load-more-btn:hover {
-    border-color: var(--primary);
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.load-more-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.nft-price {
-    color: var(--primary);
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 2px;
-}
-
-.collection-detail-filters {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 4000);
 }
