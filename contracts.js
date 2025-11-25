@@ -227,9 +227,8 @@ const COLLECTIONS = [
         symbol: '888IC',
         supply: 4086,
         description: '888 Inner Circle - White Realm.',
-        image: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/1',
-        baseUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
+        image: 'https://ipfs.io/ipfs/QmWj1Gg6NJgXMiENprckUedqWvnkeQ79cDeaHzoTfHbwjX',
+        baseUri: 'https://ipfs.io/ipfs/QmWj1Gg6NJgXMiENprckUedqWvnkeQ79cDeaHzoTfHbwjX',
         featured: false,
         jsonFile: '0xff063937523c4514179a4d9a6769694baab357a8.json'
     },
