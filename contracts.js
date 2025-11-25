@@ -126,7 +126,6 @@ const COLLECTIONS = [
         description: 'The Oracles collection on Songbird.',
         image: 'https://ipfs.io/ipfs/QmfZhkQgWgG98JmaoaiUR5qNYPJh6ZS6HVFk5U6gRPaf1W/1.jpeg',
         baseUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
         featured: false,
         jsonFile: '0xcdb019c0990c033724da55f5a04be6fd6ec1809d.json'
     },
