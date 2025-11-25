@@ -110,6 +110,13 @@ async function loadCollectionMetadata() {
             } catch (err) {
                 console.log(`Could not load metadata for ${col.name}:`, err.message);
             }
+        } else {
+            // No jsonFile - generate basic metadata from supply
+            const obj = {};
+            for (let i = 1; i <= col.supply; i++) {
+                obj[i] = { id: i, name: `${col.name} #${i}` };
+            }
+            collectionMetadata[col.address] = obj;
         }
     }
 }
