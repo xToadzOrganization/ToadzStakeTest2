@@ -191,7 +191,7 @@ const COLLECTIONS = [
         symbol: 'CYBR',
         supply: 20000,
         description: 'CYBRs on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/1',
+        image: 'https://ipfs.io/ipfs/bafybeia356q4kw2x5qes6vvm5lxt7zfnojepwgf6j46x5nnkw75vt6cyye',
         baseUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
         featured: false,
         jsonFile: '0x34ff649d709cccec77bcf433317176fd13246296.json'
