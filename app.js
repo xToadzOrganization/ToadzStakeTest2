@@ -779,13 +779,16 @@ async function loadCollectionNfts(collection, append = false) {
         return;
     }
     
-    // Fetch active listings to show prices/badges
+    // Fetch active listings first
     const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
     const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
     
     let listingData = {};
+    let listedTokenIds = [];
     try {
         const activeTokenIds = await marketplace.getActiveListings(collection.address);
+        listedTokenIds = activeTokenIds.map(t => t.toNumber ? t.toNumber() : Number(t));
+        
         // Get prices for listed items
         const listingResults = await Promise.all(activeTokenIds.map(async (tokenId) => {
             try {
@@ -816,13 +819,39 @@ async function loadCollectionNfts(collection, append = false) {
         console.log('Could not fetch listings:', err.message);
     }
     
-    const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
+    // Sort order from dropdown
+    const sortSelect = document.getElementById('listingSortSelect');
+    const sortBy = sortSelect ? sortSelect.value : 'price-asc';
+    
+    // Build token ID list based on sort
+    let tokenIds = [];
+    
+    if (sortBy === 'price-asc' || sortBy === 'price-desc') {
+        // Price sort: Listed items first (sorted by price), then unlisted by ID
+        const sortedListings = Object.values(listingData).sort((a, b) => 
+            sortBy === 'price-asc' ? a.sortPrice - b.sortPrice : b.sortPrice - a.sortPrice
+        );
+        const listedIds = sortedListings.map(l => l.id);
+        
+        const allTokenIds = Object.keys(metadata).map(id => parseInt(id)).sort((a, b) => a - b);
+        const unlistedIds = allTokenIds.filter(id => !listedTokenIds.includes(id));
+        
+        tokenIds = [...listedIds, ...unlistedIds];
+    } else {
+        // ID sort
+        const allTokenIds = Object.keys(metadata).map(id => parseInt(id));
+        tokenIds = sortBy === 'id-desc' 
+            ? allTokenIds.sort((a, b) => b - a)
+            : allTokenIds.sort((a, b) => a - b);
+    }
+    
+    // Paginate
     const pageSize = 100;
-    const tokenIds = allTokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
+    const pageTokenIds = tokenIds.slice(collectionLoadOffset, collectionLoadOffset + pageSize);
     
-    if (tokenIds.length === 0) return;
+    if (pageTokenIds.length === 0) return;
     
-    for (const tokenId of tokenIds) {
+    for (const tokenId of pageTokenIds) {
         const nftData = metadata[tokenId];
         const card = document.createElement('div');
         card.className = 'nft-card';
@@ -904,6 +933,27 @@ async function loadListedNfts(collection, grid) {
         return;
     }
     
+    // Add sortPrice to each listing and sort
+    activeListings.forEach(listing => {
+        let sortPrice = 0;
+        if (listing.priceSGB.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(listing.priceSGB));
+        else if (listing.pricePOND.gt(0)) sortPrice = parseFloat(ethers.utils.formatEther(listing.pricePOND)) / 1000;
+        listing.sortPrice = sortPrice;
+    });
+    
+    const sortSelect = document.getElementById('listingSortSelect');
+    const sortBy = sortSelect ? sortSelect.value : 'price-asc';
+    
+    activeListings.sort((a, b) => {
+        switch (sortBy) {
+            case 'price-asc': return a.sortPrice - b.sortPrice;
+            case 'price-desc': return b.sortPrice - a.sortPrice;
+            case 'id-asc': return a.tokenId - b.tokenId;
+            case 'id-desc': return b.tokenId - a.tokenId;
+            default: return a.sortPrice - b.sortPrice;
+        }
+    });
+    
     for (const listing of activeListings) {
         const tokenId = listing.tokenId;
         const nftData = metadata[tokenId];
@@ -911,14 +961,6 @@ async function loadListedNfts(collection, grid) {
         let imageUrl = collection.thumbnailUri
             ? collection.thumbnailUri + tokenId + '.png'
             : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
-        
-        // Calculate price for sorting (use SGB if available, else POND/1000 as rough equivalent)
-        let sortPrice = 0;
-        if (listing.priceSGB.gt(0)) {
-            sortPrice = parseFloat(ethers.utils.formatEther(listing.priceSGB));
-        } else if (listing.pricePOND.gt(0)) {
-            sortPrice = parseFloat(ethers.utils.formatEther(listing.pricePOND)) / 1000;
-        }
         
         let priceText = '';
         if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
@@ -930,7 +972,7 @@ async function loadListedNfts(collection, grid) {
         const card = document.createElement('div');
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
-        card.dataset.price = sortPrice;
+        card.dataset.price = listing.sortPrice;
         
         card.innerHTML = `
             <div class="nft-image">
@@ -948,9 +990,6 @@ async function loadListedNfts(collection, grid) {
         card.addEventListener('click', () => openNftModal(collection, tokenId, false, imageUrl));
         grid.appendChild(card);
     }
-    
-    // Default sort by price low to high
-    sortListings('price-asc');
 }
 
 function filterCollectionNfts(collection, searchTerm) {
@@ -989,30 +1028,17 @@ function sortCollectionNfts(collection, sortBy) {
 }
 
 function sortListings(sortBy) {
-    const grid = document.getElementById('collectionNftsGrid');
-    const cards = Array.from(grid.querySelectorAll('.nft-card'));
+    if (!currentCollectionView) return;
     
-    cards.sort((a, b) => {
-        const idA = parseInt(a.dataset.tokenId);
-        const idB = parseInt(b.dataset.tokenId);
-        const priceA = parseFloat(a.dataset.price || 0);
-        const priceB = parseFloat(b.dataset.price || 0);
-        
-        switch (sortBy) {
-            case 'price-asc':
-                return priceA - priceB;
-            case 'price-desc':
-                return priceB - priceA;
-            case 'id-asc':
-                return idA - idB;
-            case 'id-desc':
-                return idB - idA;
-            default:
-                return priceA - priceB;
-        }
-    });
+    // Reload with new sort order
+    collectionLoadOffset = 0;
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
     
-    cards.forEach(card => grid.appendChild(card));
+    if (collectionViewMode === 'listings') {
+        loadListedNfts(currentCollectionView, document.getElementById('collectionNftsGrid'));
+    } else {
+        loadCollectionNfts(currentCollectionView);
+    }
 }
 
 function filterCollections(filter) {
