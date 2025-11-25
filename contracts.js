@@ -20,7 +20,7 @@ const CONTRACTS = {
     nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
     
     // Marketplace Contract
-    marketplace: '0xBfE4044A9d6083Fe457436Fc942dC6926a79571b'
+    marketplace: '0xc99c294224BCB259F1860F0EeaABa664b29d1633'
 };
 
 // ==================== COLLECTION METADATA ====================
