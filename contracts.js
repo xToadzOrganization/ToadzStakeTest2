@@ -263,9 +263,8 @@ const COLLECTIONS = [
         symbol: 'FORT',
         supply: 52,
         description: 'FORT collection on Songbird.',
-        image: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/1.json',
-        baseUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
-        thumbnailUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
+        image: 'https://ipfs.io/ipfs/bafybeiee5vcu2osq6ng4wnwxcmabgfgnjnvqci2em4lxv7w7femcvfpbua/100.jpg',
+        baseUri: 'https://ipfs.io/ipfs/bafybeiee5vcu2osq6ng4wnwxcmabgfgnjnvqci2em4lxv7w7femcvfpbua/',
         featured: false,
         jsonFile: '0x3157537399860305ebe9e7fd17cfa00aae291c82.json'
     }
