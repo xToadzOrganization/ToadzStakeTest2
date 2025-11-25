@@ -1955,4 +1955,276 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.remove();
     }, 4000);
+    // ==================== LEADERBOARD ====================
+
+// Leaderboard tab switching
+document.querySelectorAll('.lb-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.lb-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.lb-content').forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const target = btn.dataset.lb;
+        document.getElementById(`lb-${target}`).classList.add('active');
+        
+        // Load data for this tab if not already loaded
+        loadLeaderboardData(target);
+    });
+});
+
+async function loadLeaderboardData(type) {
+    const bodyId = `${type}LbBody`;
+    const body = document.getElementById(bodyId);
+    
+    if (!body || body.dataset.loaded === 'true') return;
+    
+    body.innerHTML = '<div class="lb-loading">Loading...</div>';
+    
+    try {
+        if (type === 'stakers') {
+            await loadStakersLeaderboard(body);
+        } else if (type === 'traders') {
+            await loadTradersLeaderboard(body);
+        } else if (type === 'lp') {
+            await loadLpLeaderboard(body);
+        }
+        body.dataset.loaded = 'true';
+    } catch (err) {
+        console.error(`Failed to load ${type} leaderboard:`, err);
+        body.innerHTML = '<div class="lb-loading">Failed to load data</div>';
+    }
+}
+
+async function loadStakersLeaderboard(body) {
+    // Try to get from indexer first
+    let stakers = [];
+    
+    try {
+        const response = await fetch(`${INDEXER_URL}/leaderboard/stakers`);
+        if (response.ok) {
+            stakers = await response.json();
+        }
+    } catch (err) {
+        console.log('Indexer not available, using on-chain data');
+    }
+    
+    // If no indexer data, get from contract events
+    if (stakers.length === 0) {
+        try {
+            const readProvider = new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+            const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+            
+            // Get Staked events
+            const filter = stakingContract.filters.Staked();
+            const events = await stakingContract.queryFilter(filter, -50000);
+            
+            // Count stakes per user
+            const stakerMap = {};
+            for (const event of events) {
+                const user = event.args.user;
+                if (!stakerMap[user]) stakerMap[user] = { address: user, count: 0 };
+                stakerMap[user].count++;
+            }
+            
+            stakers = Object.values(stakerMap).sort((a, b) => b.count - a.count).slice(0, 25);
+        } catch (err) {
+            console.error('Failed to get staking data:', err);
+        }
+    }
+    
+    if (stakers.length === 0) {
+        body.innerHTML = '<div class="lb-loading">No staking data available</div>';
+        return;
+    }
+    
+    body.innerHTML = stakers.map((s, i) => `
+        <div class="lb-row">
+            <span class="lb-rank">${i + 1}</span>
+            <span class="lb-address">
+                <a href="https://songbird-explorer.flare.network/address/${s.address}" target="_blank">
+                    ${s.address.slice(0, 6)}...${s.address.slice(-4)}
+                </a>
+            </span>
+            <span class="lb-value">${s.count || s.nftsStaked || 0}</span>
+            <span class="lb-value">${formatNumber(s.pondEarned || 0)} POND</span>
+        </div>
+    `).join('');
+}
+
+async function loadTradersLeaderboard(body) {
+    let traders = [];
+    
+    try {
+        const response = await fetch(`${INDEXER_URL}/leaderboard/traders`);
+        if (response.ok) {
+            traders = await response.json();
+        }
+    } catch (err) {
+        console.log('Indexer not available');
+    }
+    
+    // Fallback to contract events
+    if (traders.length === 0) {
+        try {
+            const readProvider = new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+            const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+            
+            const filter = marketplace.filters.Sold();
+            const events = await marketplace.queryFilter(filter, -50000);
+            
+            const traderMap = {};
+            for (const event of events) {
+                const buyer = event.args.buyer;
+                const priceSGB = parseFloat(ethers.utils.formatEther(event.args.priceSGB || 0));
+                
+                if (!traderMap[buyer]) traderMap[buyer] = { address: buyer, volume: 0, sales: 0 };
+                traderMap[buyer].volume += priceSGB;
+                traderMap[buyer].sales++;
+            }
+            
+            traders = Object.values(traderMap).sort((a, b) => b.volume - a.volume).slice(0, 25);
+        } catch (err) {
+            console.error('Failed to get trading data:', err);
+        }
+    }
+    
+    if (traders.length === 0) {
+        body.innerHTML = '<div class="lb-loading">No trading data available</div>';
+        return;
+    }
+    
+    body.innerHTML = traders.map((t, i) => `
+        <div class="lb-row">
+            <span class="lb-rank">${i + 1}</span>
+            <span class="lb-address">
+                <a href="https://songbird-explorer.flare.network/address/${t.address}" target="_blank">
+                    ${t.address.slice(0, 6)}...${t.address.slice(-4)}
+                </a>
+            </span>
+            <span class="lb-value">${formatNumber(t.volume || t.volumeSGB || 0)} SGB</span>
+            <span class="lb-value">${t.sales || t.salesCount || 0}</span>
+        </div>
+    `).join('');
+}
+
+async function loadLpLeaderboard(body) {
+    let lpProviders = [];
+    
+    try {
+        const response = await fetch(`${INDEXER_URL}/leaderboard/lp`);
+        if (response.ok) {
+            lpProviders = await response.json();
+        }
+    } catch (err) {
+        console.log('Indexer not available');
+    }
+    
+    // For LP, we'd need to query the pool contract for each known depositor
+    // This is complex without an indexer, so show message
+    if (lpProviders.length === 0) {
+        body.innerHTML = '<div class="lb-loading">LP leaderboard coming soon</div>';
+        return;
+    }
+    
+    const lockTierNames = ['None', '30 Days', '90 Days', '180 Days', '365 Days'];
+    
+    body.innerHTML = lpProviders.map((lp, i) => `
+        <div class="lb-row">
+            <span class="lb-rank">${i + 1}</span>
+            <span class="lb-address">
+                <a href="https://songbird-explorer.flare.network/address/${lp.address}" target="_blank">
+                    ${lp.address.slice(0, 6)}...${lp.address.slice(-4)}
+                </a>
+            </span>
+            <span class="lb-value">${formatNumber(lp.liquidity || 0)} SGB</span>
+            <span class="lb-value">${lockTierNames[lp.lockTier] || 'Unknown'}</span>
+        </div>
+    `).join('');
+}
+
+// Load stakers leaderboard by default when tab opens
+function initLeaderboard() {
+    // Will be called when leaderboard tab is first opened
+    loadLeaderboardData('stakers');
+}
+
+// ==================== NOTIFICATIONS ====================
+
+// Toggle notification dropdown
+document.getElementById('notifBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.classList.toggle('show');
+    
+    if (dropdown.classList.contains('show')) {
+        loadNotifications();
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('notifDropdown');
+    const container = document.querySelector('.notif-container');
+    if (!container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+// Clear all notifications
+document.getElementById('clearNotifsBtn').addEventListener('click', async () => {
+    if (!userAddress) return;
+    
+    try {
+        await fetch(`${INDEXER_URL}/user/${userAddress}/notifications/clear`, { method: 'POST' });
+        document.getElementById('notifList').innerHTML = '<div class="notif-empty">No notifications</div>';
+        document.getElementById('notifBadge').textContent = '0';
+        document.getElementById('notifBadge').style.display = 'none';
+    } catch (err) {
+        console.error('Failed to clear notifications:', err);
+    }
+});
+
+async function loadNotifications() {
+    if (!userAddress) {
+        document.getElementById('notifList').innerHTML = '<div class="notif-empty">Connect wallet to see notifications</div>';
+        return;
+    }
+    
+    const notifList = document.getElementById('notifList');
+    notifList.innerHTML = '<div class="lb-loading">Loading...</div>';
+    
+    try {
+        const response = await fetch(`${INDEXER_URL}/user/${userAddress}/notifications`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const notifications = await response.json();
+        
+        if (!notifications || notifications.length === 0) {
+            notifList.innerHTML = '<div class="notif-empty">No notifications</div>';
+            return;
+        }
+        
+        notifList.innerHTML = notifications.map(n => `
+            <div class="notif-item ${n.type}">
+                <div class="notif-title">${n.title}</div>
+                <div class="notif-desc">${n.description}</div>
+                <div class="notif-time">${formatTimeAgo(n.timestamp)}</div>
+            </div>
+        `).join('');
+        
+    } catch (err) {
+        console.error('Failed to load notifications:', err);
+        notifList.innerHTML = '<div class="notif-empty">Could not load notifications</div>';
+    }
+}
+
+function formatTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - new Date(timestamp)) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
 }
