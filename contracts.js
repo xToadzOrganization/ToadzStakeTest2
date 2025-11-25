@@ -111,9 +111,8 @@ const COLLECTIONS = [
         symbol: 'FATTIGER',
         supply: 6000,
         description: 'Fat Tigers on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
+        image: 'https://ipfs.io/ipfs/QmVw4nrSRQ6eUv9LB5RsgfMaYn18pascfttjudPM5HpD3N/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmVw4nrSRQ6eUv9LB5RsgfMaYn18pascfttjudPM5HpD3N/',
         featured: false,
         jsonFile: '0xfdd87a263ba929e14dd0a2d879d9c66d5c8ff3ae.json'
     },
