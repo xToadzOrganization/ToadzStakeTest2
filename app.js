@@ -1,3 +1,6 @@
+// ==================== CONFIG ====================
+const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
+
 // ==================== STATE ====================
 let provider = null;
 let signer = null;
@@ -32,57 +35,38 @@ async function init() {
 }
 
 // Notification system
-let pendingOffers = [];
+let notificationCounts = { red: 0, green: 0 };
 
-function updateNotificationBadge(count, type = 'default') {
+function updateNotificationBadge(redCount, greenCount) {
     const badge = document.getElementById('notifBadge');
-    if (count === 0) {
+    const total = redCount + greenCount;
+    
+    if (total === 0) {
         badge.style.display = 'none';
     } else {
         badge.style.display = 'flex';
-        badge.textContent = count;
-        // Red for incoming money (offers/sales), green for user confirmations
-        if (type === 'money') {
-            badge.style.background = '#e74c3c';
-        } else if (type === 'success') {
-            badge.style.background = '#00d4aa';
-        } else {
-            badge.style.background = '#e74c3c';
-        }
+        badge.textContent = total;
+        // Red takes priority (money incoming), else green (confirmations)
+        badge.style.background = redCount > 0 ? '#e74c3c' : '#00d4aa';
     }
+    
+    notificationCounts = { red: redCount, green: greenCount };
 }
 
 async function checkForNewOffers() {
-    if (!isConnected || CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return;
+    if (!isConnected) return;
     
     try {
-        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
-        let offerCount = 0;
+        const response = await fetch(`${INDEXER_URL}/user/${userAddress}/notifications/unread`);
+        if (!response.ok) throw new Error('Indexer unavailable');
         
-        // Check offers on user's listed NFTs
-        for (const col of COLLECTIONS) {
-            const activeTokenIds = await marketplace.getActiveListings(col.address);
-            
-            for (const tokenId of activeTokenIds) {
-                const [seller] = await marketplace.getListing(col.address, tokenId);
-                if (seller.toLowerCase() === userAddress.toLowerCase()) {
-                    const offers = await marketplace.getOffers(col.address, tokenId);
-                    const validOffers = offers.filter(o => 
-                        o.buyer !== '0x0000000000000000000000000000000000000000' &&
-                        new Date(o.expiry.toNumber() * 1000) > new Date()
-                    );
-                    offerCount += validOffers.length;
-                }
-            }
-        }
+        const data = await response.json();
+        updateNotificationBadge(data.counts.red || 0, data.counts.green || 0);
         
-        if (offerCount > 0) {
-            updateNotificationBadge(offerCount, 'money');
-        } else {
-            updateNotificationBadge(0);
-        }
     } catch (err) {
-        console.log('Could not check offers:', err.message);
+        console.log('Could not check notifications:', err.message);
+        // Fallback: just hide badge if indexer is down
+        updateNotificationBadge(0, 0);
     }
 }
 
@@ -318,167 +302,101 @@ function createCollectionCard(collection) {
     return card;
 }
 
-// Load recent marketplace activity
+// Load recent marketplace activity from indexer
 async function loadRecentActivity() {
     const activityList = document.getElementById('activityList');
     
     try {
-        const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
-        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
-        const staking = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+        const response = await fetch(`${INDEXER_URL}/activity?limit=20`);
+        if (!response.ok) throw new Error('Indexer unavailable');
         
-        console.log('Loading activity...');
-        const currentBlock = await readProvider.getBlockNumber();
-        console.log('Current block:', currentBlock);
+        const events = await response.json();
         
-        const allEvents = [];
-        const maxChunks = 100; // Go back max 3000 blocks
-        const chunkSize = 30; // Songbird limit
-        
-        // Query in 30-block chunks
-        for (let i = 0; i < maxChunks && allEvents.length < 20; i++) {
-            const toBlock = currentBlock - (i * chunkSize);
-            const fromBlock = toBlock - chunkSize + 1;
-            
-            if (fromBlock < 0) break;
-            
-            console.log(`Chunk ${i}: blocks ${fromBlock} to ${toBlock}`);
-            
-            try {
-                const [soldEvents, listedEvents, offerEvents, stakedEvents] = await Promise.all([
-                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock),
-                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock),
-                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock),
-                    staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock)
-                ]);
-                
-                console.log(`Chunk ${i}: ${soldEvents.length} sales, ${listedEvents.length} listings, ${offerEvents.length} offers, ${stakedEvents.length} stakes`);
-                
-                allEvents.push(
-                    ...soldEvents.map(e => ({ type: 'sale', event: e })),
-                    ...listedEvents.map(e => ({ type: 'listing', event: e })),
-                    ...offerEvents.map(e => ({ type: 'offer', event: e })),
-                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
-                );
-                
-                // Stop if we have enough
-                if (allEvents.length >= 20) break;
-                
-                // Delay to avoid rate limits
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-            } catch (err) {
-                console.log(`Chunk ${i} failed:`, err.message);
-                break;
-            }
-        }
-        
-        console.log('Total events found:', allEvents.length);
-        
-        if (allEvents.length === 0) {
+        if (events.length === 0) {
             activityList.innerHTML = '<div class="activity-loading">No recent activity</div>';
             return;
         }
         
-        // Sort and take top 20
-        allEvents.sort((a, b) => b.event.blockNumber - a.event.blockNumber);
-        const recentEvents = allEvents.slice(0, 20);
-        
         activityList.innerHTML = '';
         
-        for (const { type, event } of recentEvents) {
-            const item = await createActivityItem(type, event, readProvider);
+        for (const event of events) {
+            const item = createActivityItemFromIndexer(event);
             if (item) activityList.appendChild(item);
         }
         
-        console.log('Activity feed loaded');
-        
     } catch (err) {
-        console.error('Error loading activity:', err);
-        activityList.innerHTML = `<div class="activity-loading">Error: ${err.message}</div>`;
+        console.log('Activity load failed:', err.message);
+        activityList.innerHTML = '<div class="activity-loading">Could not load activity</div>';
     }
 }
 
-async function createActivityItem(type, event, readProvider) {
-    try {
-        const collection = COLLECTIONS.find(c => c.address.toLowerCase() === event.args.collection.toLowerCase());
-        if (!collection) return null;
-        
-        const tokenId = event.args.tokenId.toNumber();
-        const metadata = collectionMetadata[collection.address];
-        const nftData = metadata ? metadata[tokenId] : null;
-        
-        // Get image URL
-        let imageUrl = collection.thumbnailUri 
-            ? collection.thumbnailUri + tokenId + '.png'
-            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
-        
-        // Format details based on type
-        let typeLabel = '';
-        let details = '';
-        let price = '';
-        
-        if (type === 'sale') {
+function createActivityItemFromIndexer(event) {
+    const collection = COLLECTIONS.find(c => c.address.toLowerCase() === event.collection?.toLowerCase());
+    if (!collection) return null;
+    
+    let typeLabel = '';
+    let typeClass = '';
+    let price = '';
+    
+    switch (event.event_type) {
+        case 'sold':
             typeLabel = 'SALE';
-            const buyer = event.args.buyer;
-            details = `${collection.name} #${tokenId}`;
-            
-            if (event.args.priceSGB.gt(0)) {
-                price = parseFloat(ethers.utils.formatEther(event.args.priceSGB)).toFixed(2) + ' SGB';
-            } else if (event.args.pricePOND.gt(0)) {
-                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.pricePOND))) + ' POND';
+            typeClass = 'sale';
+            if (parseFloat(event.price_sgb) > 0) {
+                price = parseFloat(event.price_sgb).toFixed(2) + ' SGB';
+            } else if (parseFloat(event.price_pond) > 0) {
+                price = formatNumber(parseFloat(event.price_pond)) + ' POND';
             }
-        } else if (type === 'listing') {
+            break;
+        case 'listed':
             typeLabel = 'LISTED';
-            details = `${collection.name} #${tokenId}`;
-            
-            if (event.args.priceSGB.gt(0)) {
-                price = parseFloat(ethers.utils.formatEther(event.args.priceSGB)).toFixed(2) + ' SGB';
-            } else if (event.args.pricePOND.gt(0)) {
-                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.pricePOND))) + ' POND';
+            typeClass = 'listing';
+            if (parseFloat(event.price_sgb) > 0) {
+                price = parseFloat(event.price_sgb).toFixed(2) + ' SGB';
+            } else if (parseFloat(event.price_pond) > 0) {
+                price = formatNumber(parseFloat(event.price_pond)) + ' POND';
             }
-        } else if (type === 'offer') {
+            break;
+        case 'offer_accepted':
             typeLabel = 'OFFER ACCEPTED';
-            details = `${collection.name} #${tokenId}`;
-            
-            if (event.args.amountSGB.gt(0)) {
-                price = parseFloat(ethers.utils.formatEther(event.args.amountSGB)).toFixed(2) + ' SGB';
-            } else if (event.args.amountPOND.gt(0)) {
-                price = formatNumber(parseFloat(ethers.utils.formatEther(event.args.amountPOND))) + ' POND';
+            typeClass = 'offer';
+            if (parseFloat(event.price_sgb) > 0) {
+                price = parseFloat(event.price_sgb).toFixed(2) + ' SGB';
+            } else if (parseFloat(event.price_pond) > 0) {
+                price = formatNumber(parseFloat(event.price_pond)) + ' POND';
             }
-        } else if (type === 'staked') {
+            break;
+        case 'staked':
             typeLabel = 'STAKED';
-            details = `${collection.name} #${tokenId}`;
-            price = ''; // No price for staking
-        }
-        
-        // Get timestamp
-        const block = await readProvider.getBlock(event.blockNumber);
-        const timeAgo = getTimeAgo(block.timestamp);
-        
-        const item = document.createElement('div');
-        item.className = 'activity-item';
-        item.onclick = () => openNftModal(collection, tokenId, false, imageUrl);
-        
-        item.innerHTML = `
-            <div class="activity-icon">
-                <img src="${imageUrl}" alt="${collection.name} #${tokenId}" 
-                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
-            </div>
-            <div class="activity-info">
-                <div class="activity-type ${type}">${typeLabel}</div>
-                <div class="activity-details">${details}</div>
-                <div class="activity-price">${price}</div>
-                <div class="activity-time">${timeAgo}</div>
-            </div>
-        `;
-        
-        return item;
-        
-    } catch (err) {
-        console.log('Error creating activity item:', err);
-        return null;
+            typeClass = 'staked';
+            break;
+        default:
+            return null;
     }
+    
+    // Get image URL
+    let imageUrl = collection.thumbnailUri 
+        ? collection.thumbnailUri + event.token_id + '.png'
+        : collection.image;
+    
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.onclick = () => openNftModal(collection, event.token_id, false, imageUrl);
+    
+    item.innerHTML = `
+        <div class="activity-icon">
+            <img src="${imageUrl}" alt="${collection.name} #${event.token_id}" 
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
+        </div>
+        <div class="activity-info">
+            <div class="activity-type ${typeClass}">${typeLabel}</div>
+            <div class="activity-details">${collection.name} #${event.token_id}</div>
+            <div class="activity-price">${price}</div>
+            <div class="activity-time">${event.time_ago}</div>
+        </div>
+    `;
+    
+    return item;
 }
 
 function getTimeAgo(timestamp) {
