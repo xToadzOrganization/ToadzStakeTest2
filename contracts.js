@@ -33,6 +33,8 @@ const CONTRACTS = {
     theGrungies: '0x4F52A074De9f2651d2f711FEe63FEe9E3b439A7e',
     theSenators: '0x927463265eDE6a52604D179d7110B7B2fc057a3f',
     fort: '0x3157537399860305ebE9e7fd17cfA00AAE291c82',
+    rarePepeClub: '0x7DC06eE0717c6f4905652f46f8F1891E8538e799',
+    sgbWhales: '0x2d086E61267A57503dd4aA1bB4E807bc50fa7Ee1',
     
     // NFT Staking Contract
     nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
@@ -192,7 +194,6 @@ const COLLECTIONS = [
         description: 'CYBRs on Songbird.',
         image: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/1',
         baseUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
         featured: false,
         jsonFile: '0x34ff649d709cccec77bcf433317176fd13246296.json'
     },
@@ -261,7 +262,28 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/bafybeiee5vcu2osq6ng4wnwxcmabgfgnjnvqci2em4lxv7w7femcvfpbua/',
         featured: false,
         jsonFile: '0x3157537399860305ebe9e7fd17cfa00aae291c82.json'
-    }
+    },
+
+    {
+    address: CONTRACTS.rarePepeClub,
+    name: 'Rare Pepe Club',
+    symbol: 'RAREPEPE',
+    supply: 9973,
+    description: 'Rare Pepe Club on Songbird.',
+    image: 'https://ipfs.io/ipfs/QmPhiHC5eJScAAHMiboqkRe1nqo8KvfTQ3meM87yCqRQWx/5645.png',
+    baseUri: 'https://ipfs.io/ipfs/QmPhiHC5eJScAAHMiboqkRe1nqo8KvfTQ3meM87yCqRQWx/',
+    featured: false
+},
+{
+    address: CONTRACTS.sgbWhales,
+    name: 'SGB Whales',
+    symbol: 'WHALE',
+    supply: 2100,
+    description: 'SGB Whales on Songbird.',
+    image: 'https://ipfs.io/ipfs/QmU8o16h3VgBzmMMTiUN9oN1yTwsduJu2vKLPoRMLore4o/1790.jpg',
+    baseUri: 'https://ipfs.io/ipfs/QmU8o16h3VgBzmMMTiUN9oN1yTwsduJu2vKLPoRMLore4o/',
+    featured: false
+}
 ];
 
 // ==================== ABIs ====================
