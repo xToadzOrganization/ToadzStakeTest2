@@ -291,7 +291,7 @@ async function loadCollectionFloors() {
     // Get POND/SGB rate from pool for price comparison
     let pondToSgbRate = 0;
     try {
-        const pool = new ethers.Contract(CONTRACTS.poolProxy, PONDPOOL_ABI, readProvider);
+        const pool = new ethers.Contract(CONTRACTS.pondPool, PONDPOOL_ABI, readProvider);
         const [reserveSGB, reservePOND] = await Promise.all([
             pool.reserveSGB(),
             pool.reservePOND()
@@ -317,10 +317,13 @@ async function loadCollectionFloors() {
             const results = await Promise.all(activeTokenIds.map(async (tokenId) => {
                 try {
                     const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
+                    console.log(`Token ${tokenId}: active=${active}, SGB=${priceSGB.toString()}, POND=${pricePOND.toString()}`);
                     if (!active) return null;
                     
                     const sgbPrice = priceSGB.gt(0) ? parseFloat(ethers.utils.formatEther(priceSGB)) : null;
                     const pondPrice = pricePOND.gt(0) ? parseFloat(ethers.utils.formatEther(pricePOND)) : null;
+                    
+                    console.log(`Token ${tokenId}: sgbPrice=${sgbPrice}, pondPrice=${pondPrice}`);
                     
                     // Calculate SGB equivalent for comparison
                     let sgbEquivalent = Infinity;
@@ -339,17 +342,21 @@ async function loadCollectionFloors() {
                     } else if (sgbPrice !== null) {
                         sgbEquivalent = sgbPrice;
                         displayPrice = sgbPrice.toFixed(1) + ' SGB';
-                    } else if (pondPrice !== null && pondToSgbRate > 0) {
-                        sgbEquivalent = pondPrice * pondToSgbRate;
+                    } else if (pondPrice !== null) {
+                        sgbEquivalent = pondToSgbRate > 0 ? pondPrice * pondToSgbRate : pondPrice / 1000;
                         displayPrice = formatNumber(pondPrice) + ' POND';
                     }
                     
+                    console.log(`Token ${tokenId}: sgbEquivalent=${sgbEquivalent}, display=${displayPrice}`);
                     return { sgbEquivalent, displayPrice };
-                } catch {}
+                } catch (err) {
+                    console.error('Error getting listing:', err);
+                }
                 return null;
             }));
             
             const validPrices = results.filter(p => p !== null && p.sgbEquivalent < Infinity);
+            console.log(`${col.name}: valid prices:`, validPrices);
             
             if (validPrices.length > 0) {
                 // Find lowest price
