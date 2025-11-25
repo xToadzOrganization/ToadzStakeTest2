@@ -55,7 +55,7 @@ const COLLECTIONS = [
         thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x35afb6ba51839dedd33140a3b704b39933d1e642.json'
+        jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
     },
     {
         address: CONTRACTS.luxuryLofts,
@@ -67,7 +67,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x91aa85a172dd3e7eea4ad1a4b33e90cbf3b99ed8.json'
+        jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
     },
     {
         address: CONTRACTS.songbirdCity,
@@ -79,7 +79,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         featured: true,
         stakeable: true,
-        jsonFile: '0x360f8b7d9530f55ab8e52394e6527935635f51e7.json'
+        jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
     },
     
     // === Fat Family ===
