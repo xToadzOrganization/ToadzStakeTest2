@@ -327,7 +327,7 @@ async function loadRecentActivity() {
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
         
         const currentBlock = await readProvider.getBlockNumber();
-        const fromBlock = Math.max(0, currentBlock - 5000); // Last ~5000 blocks
+        const fromBlock = Math.max(0, currentBlock - 2000); // Last ~2000 blocks (~1 hour)
         
         // Fetch events in parallel
         const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
