@@ -329,10 +329,10 @@ async function loadRecentActivity() {
         
         const currentBlock = await readProvider.getBlockNumber();
         const allEvents = [];
-        const chunkSize = 30; // Songbird RPC limit
-        const maxChunks = 50; // Don't go back more than 1500 blocks
+        const chunkSize = 30;
+        const maxChunks = 20; // Reduced from 50
         
-        // Keep fetching chunks until we have 20 events or hit max chunks
+        // Fetch chunks sequentially to avoid rate limits
         for (let i = 0; i < maxChunks && allEvents.length < 20; i++) {
             const toBlock = currentBlock - (i * chunkSize);
             const fromBlock = Math.max(0, toBlock - chunkSize + 1);
@@ -340,23 +340,32 @@ async function loadRecentActivity() {
             if (fromBlock <= 0) break;
             
             try {
-                // Fetch events in parallel for this chunk
-                const [soldEvents, listedEvents, offerAcceptedEvents, stakedEvents] = await Promise.all([
-                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock),
-                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock),
-                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock),
-                    staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock)
+                // Fetch marketplace events first
+                const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
+                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock).catch(() => []),
+                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock).catch(() => []),
+                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock).catch(() => [])
                 ]);
                 
                 allEvents.push(
                     ...soldEvents.map(e => ({ type: 'sale', event: e })),
                     ...listedEvents.map(e => ({ type: 'listing', event: e })),
-                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e })),
-                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
+                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
                 );
+                
+                // Only fetch staking events if we need more
+                if (allEvents.length < 20 && i < 10) { // Only first 10 chunks for staking
+                    const stakedEvents = await staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock).catch(() => []);
+                    allEvents.push(...stakedEvents.map(e => ({ type: 'staked', event: e })));
+                }
+                
+                // Small delay between chunks to avoid rate limits
+                if (i < maxChunks - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
             } catch (err) {
                 console.log(`Error fetching chunk ${i}:`, err.message);
-                break; // Stop on error
+                // Continue to next chunk on error
             }
         }
         
@@ -380,7 +389,7 @@ async function loadRecentActivity() {
         
     } catch (err) {
         console.error('Error loading activity:', err);
-        activityList.innerHTML = '<div class="activity-loading">Could not load activity</div>';
+        activityList.innerHTML = '<div class="activity-loading">Activity unavailable</div>';
     }
 }
 
