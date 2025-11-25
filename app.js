@@ -1,6 +1,15 @@
 // ==================== CONFIG ====================
 const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
 
+// IPFS gateway for converting ipfs:// URLs
+function ipfsToHttp(url) {
+    if (!url) return '';
+    if (url.startsWith('ipfs://')) {
+        return url.replace('ipfs://', 'https://nftstorage.link/ipfs/');
+    }
+    return url;
+}
+
 // ==================== STATE ====================
 let provider = null;
 let signer = null;
@@ -271,9 +280,11 @@ function createCollectionCard(collection) {
     card.style.cursor = 'pointer';
     card.dataset.address = collection.address;
     
+    const lpBoostBadge = collection.stakeable ? '<div class="multiplier-badge">🔥 LP Boost Eligible</div>' : '';
+    
     card.innerHTML = `
         <div class="collection-banner">
-            <img src="${collection.image}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
+            <img src="${ipfsToHttp(collection.image)}" alt="${collection.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
         </div>
         <div class="collection-info">
             <div class="collection-name">${collection.name}</div>
@@ -292,7 +303,7 @@ function createCollectionCard(collection) {
                     <span class="col-stat-label">Volume</span>
                 </div>
             </div>
-            <div class="multiplier-badge">🔥 LP Boost Eligible</div>
+            ${lpBoostBadge}
         </div>
     `;
     
@@ -816,7 +827,7 @@ function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed
             // Get from metadata
             const metadata = collectionMetadata[collection.address];
             if (metadata && metadata[tokenId]) {
-                imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+                imageUrl = ipfsToHttp(metadata[tokenId].art || metadata[tokenId].image);
             }
             if (!imageUrl) {
                 // Fallback to baseUri
@@ -897,14 +908,14 @@ function openCollectionView(collection) {
             <div class="collection-detail-header">
                 <button class="back-btn" onclick="closeCollectionView()">← Back</button>
                 <div class="collection-detail-info">
-                    <img src="${collection.image}" class="collection-detail-avatar" alt="${collection.name}"
+                    <img src="${ipfsToHttp(collection.image)}" class="collection-detail-avatar" alt="${collection.name}"
                          onerror="this.style.display='none'">
                     <div class="collection-detail-text">
                         <h2>${collection.name}</h2>
                         <p>${collection.description}</p>
                         <div class="collection-detail-stats">
                             <span>${formatNumber(collection.supply)} items</span>
-                            <span class="multiplier-badge">🔥 LP Boost Eligible</span>
+                            ${collection.stakeable ? '<span class="multiplier-badge">🔥 LP Boost Eligible</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -1080,7 +1091,7 @@ async function loadCollectionNfts(collection, append = false) {
         
         let imageUrl = collection.thumbnailUri 
             ? collection.thumbnailUri + tokenId + '.png'
-            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
         
         const listedBadge = listing ? '<div class="listed-badge">LISTED</div>' : '';
         const priceDisplay = listing ? `<div class="nft-price">${listing.priceText}</div>` : '';
@@ -1176,7 +1187,7 @@ async function loadListedNfts(collection, grid) {
         
         let imageUrl = collection.thumbnailUri
             ? collection.thumbnailUri + tokenId + '.png'
-            : (nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
         
         let priceText = '';
         if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
@@ -1274,11 +1285,11 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
     if (!imageUrl) {
         const metadata = collectionMetadata[collection.address];
         if (metadata && metadata[tokenId]) {
-            imageUrl = metadata[tokenId].art || metadata[tokenId].image;
+            imageUrl = ipfsToHttp(metadata[tokenId].art || metadata[tokenId].image);
         }
         if (!imageUrl) {
             if (collection.baseUri.includes('ipfs://')) {
-                imageUrl = collection.baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/') + tokenId + '.png';
+                imageUrl = ipfsToHttp(collection.baseUri) + tokenId + '.png';
             } else if (collection.baseUri.endsWith('/')) {
                 imageUrl = collection.baseUri + tokenId + '.png';
             } else {
@@ -1368,9 +1379,12 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
         priceEl.textContent = 'Not Listed';
         
         if (isOwner) {
+            const stakeBtn = collection.stakeable 
+                ? `<button class="modal-btn primary" onclick="stakeNft('${collection.address}', ${tokenId})">Stake for LP Boost</button>`
+                : '';
             actionsEl.innerHTML = `
-                <button class="modal-btn primary" onclick="stakeNft('${collection.address}', ${tokenId})">Stake for LP Boost</button>
-                <button class="modal-btn secondary" onclick="listNft('${collection.address}', ${tokenId})">List for Sale</button>
+                ${stakeBtn}
+                <button class="modal-btn ${collection.stakeable ? 'secondary' : 'primary'}" onclick="listNft('${collection.address}', ${tokenId})">List for Sale</button>
             `;
         } else if (isConnected) {
             actionsEl.innerHTML = `<button class="modal-btn secondary" onclick="showOfferForm('${collection.address}', ${tokenId})">Make Offer</button>`;
