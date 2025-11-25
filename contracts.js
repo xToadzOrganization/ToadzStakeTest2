@@ -124,7 +124,7 @@ const COLLECTIONS = [
         symbol: 'ORACLE',
         supply: 22222,
         description: 'The Oracles collection on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/1.png',
+        image: 'https://ipfs.io/ipfs/QmfZhkQgWgG98JmaoaiUR5qNYPJh6ZS6HVFk5U6gRPaf1W/1.jpeg',
         baseUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
         featured: false,
@@ -137,8 +137,7 @@ const COLLECTIONS = [
         supply: 9999,
         description: 'Sparkles Genesis collection.',
         image: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
+        baseUri: 'https://ipfs.io/ipfs/QmfZhkQgWgG98JmaoaiUR5qNYPJh6ZS6HVFk5U6gRPaf1W/',
         featured: false,
         jsonFile: '0xd167c20575c284df75bcfe1794d54d3e057cd4ec.json'
     },
