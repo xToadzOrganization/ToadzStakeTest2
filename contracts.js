@@ -146,9 +146,8 @@ const COLLECTIONS = [
         symbol: 'SBPUNK',
         supply: 20000,
         description: 'Punk-style NFTs on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
+        image: 'https://ipfs.io/ipfs/Qmc6cQJaUjBZYfQ1G8tcFhdsyVLn79MKFp1kKB9Cj17gQn/1.png',
+        baseUri: 'https://ipfs.io/ipfs/Qmc6cQJaUjBZYfQ1G8tcFhdsyVLn79MKFp1kKB9Cj17gQn/',
         featured: false,
         jsonFile: '0xd83ae2c70916a2360e23683a0d3a3556b2c09935.json'
     },
