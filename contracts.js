@@ -241,7 +241,7 @@ const COLLECTIONS = [
         symbol: 'GRUNGIE',
         supply: 1990,
         description: 'The Grungies on Songbird.',
-        image: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/1.png',
+        image: 'https://ipfs.io/ipfs/bafybeicvh5ohzknagt7qtu6bliikrlfsmv573ufwmjm7k25jx6u54grd2e/1.png',
         baseUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
         thumbnailUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
         featured: false,
@@ -254,8 +254,7 @@ const COLLECTIONS = [
         supply: 350,
         description: 'The Senators - Satraps Collection.',
         image: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/1.png',
-        baseUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
-        thumbnailUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
+        baseUri: 'https://ipfs.io/ipfs/bafybeicvh5ohzknagt7qtu6bliikrlfsmv573ufwmjm7k25jx6u54grd2e/',
         featured: false,
         jsonFile: '0x927463265ede6a52604d179d7110b7b2fc057a3f.json'
     },
