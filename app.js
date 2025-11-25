@@ -340,12 +340,10 @@ async function loadRecentActivity() {
             if (fromBlock <= 0) break;
             
             try {
-                // Fetch marketplace events first
-                const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
-                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock).catch(() => []),
-                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock).catch(() => []),
-                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock).catch(() => [])
-                ]);
+                // Fetch marketplace events
+                const soldEvents = await marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock).catch(() => []);
+                const listedEvents = await marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock).catch(() => []);
+                const offerAcceptedEvents = await marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock).catch(() => []);
                 
                 allEvents.push(
                     ...soldEvents.map(e => ({ type: 'sale', event: e })),
@@ -353,19 +351,26 @@ async function loadRecentActivity() {
                     ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
                 );
                 
-                // Only fetch staking events if we need more
-                if (allEvents.length < 20 && i < 10) { // Only first 10 chunks for staking
+                // Small delay
+                await new Promise(resolve => setTimeout(resolve, 50));
+            } catch (err) {
+                console.log(`Error fetching marketplace chunk ${i}:`, err.message);
+            }
+        }
+        
+        // Now fetch staking events if we have room (limit to 5 max)
+        const stakingEventsNeeded = Math.max(0, 5 - allEvents.filter(e => e.type === 'staked').length);
+        if (stakingEventsNeeded > 0) {
+            try {
+                for (let i = 0; i < 10 && allEvents.filter(e => e.type === 'staked').length < 5; i++) {
+                    const toBlock = currentBlock - (i * chunkSize);
+                    const fromBlock = Math.max(0, toBlock - chunkSize + 1);
                     const stakedEvents = await staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock).catch(() => []);
                     allEvents.push(...stakedEvents.map(e => ({ type: 'staked', event: e })));
-                }
-                
-                // Small delay between chunks to avoid rate limits
-                if (i < maxChunks - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
             } catch (err) {
-                console.log(`Error fetching chunk ${i}:`, err.message);
-                // Continue to next chunk on error
+                console.log('Error fetching staking events:', err.message);
             }
         }
         
