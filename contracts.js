@@ -100,9 +100,8 @@ const COLLECTIONS = [
         symbol: 'FATLEOPARD',
         supply: 3000,
         description: 'Fat Leopards on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
+        image: 'https://ipfs.io/ipfs/QmSjxt6DqfXcNfUeqNnDCQXofzCwJQS4qf6FyinwHuyPCH/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmSjxt6DqfXcNfUeqNnDCQXofzCwJQS4qf6FyinwHuyPCH/',
         featured: false,
         jsonFile: '0x12c40516c7bf32002ff0e3431082c9e28ab76066.json'
     },
