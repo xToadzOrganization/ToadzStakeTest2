@@ -508,6 +508,10 @@ body {
     color: var(--orange-primary);
 }
 
+.activity-type.staked {
+    color: var(--purple-primary);
+}
+
 .activity-details {
     font-size: 13px;
     color: var(--text-primary);
