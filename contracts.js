@@ -252,8 +252,8 @@ const COLLECTIONS = [
         symbol: 'SENATOR',
         supply: 350,
         description: 'The Senators - Satraps Collection.',
-        image: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/1.png',
-        baseUri: 'https://ipfs.io/ipfs/bafybeicvh5ohzknagt7qtu6bliikrlfsmv573ufwmjm7k25jx6u54grd2e/',
+        image: 'https://ipfs.io/ipfs/bafybeiee5vcu2osq6ng4wnwxcmabgfgnjnvqci2em4lxv7w7femcvfpbua/100.jpg',
+        baseUri: 'https://ipfs.io/ipfs/bafybeiee5vcu2osq6ng4wnwxcmabgfgnjnvqci2em4lxv7w7femcvfpbua/',
         featured: false,
         jsonFile: '0x927463265ede6a52604d179d7110b7b2fc057a3f.json'
     },
