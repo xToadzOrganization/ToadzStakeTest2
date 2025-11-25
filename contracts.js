@@ -168,9 +168,8 @@ const COLLECTIONS = [
         symbol: 'BAZOOKA',
         supply: 10000,
         description: 'Bazooka Chicks on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
+        image: 'https://ipfs.io/ipfs/QmXwBAZs4pbiEeXU5HkKMEnxhWuTR5XdZt9afNsQ2cM9na/1.jpg',
+        baseUri: 'https://ipfs.io/ipfs/QmXwBAZs4pbiEeXU5HkKMEnxhWuTR5XdZt9afNsQ2cM9na/',
         featured: false,
         jsonFile: '0x2972ea6e6cc45c5837ce909def032dd325b48415.json'
     },
