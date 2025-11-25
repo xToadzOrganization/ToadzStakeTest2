@@ -157,9 +157,8 @@ const COLLECTIONS = [
         symbol: 'DOODCAT',
         supply: 10000,
         description: 'Doodle cats on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
+        image: 'https://ipfs.io/ipfs/QmWGAWmuHZ4xzMp8eRyB8Ntut9xwPuKej9XmM5AWmsNQLZ/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmWGAWmuHZ4xzMp8eRyB8Ntut9xwPuKej9XmM5AWmsNQLZ/',
         featured: false,
         jsonFile: '0x279a222a18c033124ab02290ddec97912a8b7185.json'
     },
