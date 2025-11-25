@@ -1169,6 +1169,7 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
             if (listing.pricePOND.gt(0)) {
                 buyButtons += `<button class="modal-btn primary" onclick="buyNft('${collection.address}', ${tokenId}, true)">Buy with POND</button>`;
             }
+            buyButtons += `<button class="modal-btn secondary" onclick="showOfferForm('${collection.address}', ${tokenId})">Make Offer</button>`;
             actionsEl.innerHTML = buyButtons;
         }
     } else if (isStaked) {
@@ -1197,13 +1198,76 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
                 <button class="modal-btn primary" onclick="stakeNft('${collection.address}', ${tokenId})">Stake for LP Boost</button>
                 <button class="modal-btn secondary" onclick="listNft('${collection.address}', ${tokenId})">List for Sale</button>
             `;
+        } else if (isConnected) {
+            actionsEl.innerHTML = `<button class="modal-btn secondary" onclick="showOfferForm('${collection.address}', ${tokenId})">Make Offer</button>`;
         } else {
-            actionsEl.innerHTML = `<p style="color: var(--text-muted);">Not for sale</p>`;
+            actionsEl.innerHTML = `<p style="color: var(--text-muted);">Connect wallet to make offer</p>`;
         }
     }
     
-    // Clear history
-    document.getElementById('historyList').innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No activity yet</div>';
+    // Load offers for this NFT
+    const historyEl = document.getElementById('historyList');
+    historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Loading offers...</div>';
+    
+    // Check if user is owner or seller
+    let canAcceptOffers = false;
+    if (isConnected) {
+        try {
+            const nftContract = new ethers.Contract(collection.address, ERC721_ABI, provider);
+            const owner = await nftContract.ownerOf(tokenId);
+            canAcceptOffers = owner.toLowerCase() === userAddress.toLowerCase() || 
+                              (listing && listing.seller.toLowerCase() === userAddress.toLowerCase());
+        } catch {}
+    }
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        const offers = await marketplace.getOffers(collection.address, tokenId);
+        
+        const validOffers = offers.filter(o => o.buyer !== '0x0000000000000000000000000000000000000000');
+        
+        if (validOffers.length === 0) {
+            historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No offers yet</div>';
+        } else {
+            let offersHtml = '<div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Offers</div>';
+            
+            for (let i = 0; i < offers.length; i++) {
+                const offer = offers[i];
+                if (offer.buyer === '0x0000000000000000000000000000000000000000') continue; // Cancelled
+                
+                const expiry = new Date(offer.expiry.toNumber() * 1000);
+                const expired = expiry < new Date();
+                
+                let amountText = '';
+                if (offer.amountSGB.gt(0)) amountText += parseFloat(ethers.utils.formatEther(offer.amountSGB)).toFixed(2) + ' SGB';
+                if (offer.amountPOND.gt(0)) {
+                    if (amountText) amountText += ' + ';
+                    amountText += formatNumber(parseFloat(ethers.utils.formatEther(offer.amountPOND))) + ' POND';
+                }
+                
+                offersHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <div style="color: white;">${amountText}</div>
+                            <div style="color: var(--text-muted); font-size: 11px;">
+                                ${formatAddress(offer.buyer)} • ${expired ? 'Expired' : 'Expires ' + expiry.toLocaleDateString()}
+                            </div>
+                        </div>
+                        ${!expired && canAcceptOffers ? 
+                            `<button class="modal-btn primary" style="padding: 4px 12px; font-size: 12px;" onclick="acceptOffer('${collection.address}', ${tokenId}, ${i})">Accept</button>` : 
+                            ''}
+                        ${!expired && isConnected && offer.buyer.toLowerCase() === userAddress.toLowerCase() ? 
+                            `<button class="modal-btn secondary" style="padding: 4px 12px; font-size: 12px;" onclick="cancelOffer('${collection.address}', ${tokenId}, ${i})">Cancel</button>` : 
+                            ''}
+                    </div>
+                `;
+            }
+            historyEl.innerHTML = offersHtml;
+        }
+    } catch (err) {
+        console.log('Could not load offers:', err.message);
+        historyEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No offers yet</div>';
+    }
     
     modal.classList.add('active');
 }
@@ -1552,6 +1616,112 @@ async function cancelListing(collectionAddress, tokenId) {
         
     } catch (err) {
         console.error('Cancel failed:', err);
+        showToast('Cancel failed: ' + (err.reason || err.message), 'error');
+    }
+}
+
+function showOfferForm(collectionAddress, tokenId) {
+    const actionsEl = document.getElementById('modalActions');
+    actionsEl.innerHTML = `
+        <div class="offer-form" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="offerSGB" placeholder="SGB amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+                <input type="number" id="offerPOND" placeholder="POND amount" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+            </div>
+            <select id="offerDuration" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+                <option value="86400">1 day</option>
+                <option value="259200">3 days</option>
+                <option value="604800" selected>7 days</option>
+                <option value="2592000">30 days</option>
+            </select>
+            <div style="display: flex; gap: 10px;">
+                <button class="modal-btn primary" onclick="submitOffer('${collectionAddress}', ${tokenId})">Submit Offer</button>
+                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    `;
+}
+
+async function submitOffer(collectionAddress, tokenId) {
+    if (!isConnected) return;
+    
+    const sgbAmount = document.getElementById('offerSGB').value || '0';
+    const pondAmount = document.getElementById('offerPOND').value || '0';
+    const duration = document.getElementById('offerDuration').value;
+    
+    if (parseFloat(sgbAmount) <= 0 && parseFloat(pondAmount) <= 0) {
+        showToast('Enter an offer amount', 'error');
+        return;
+    }
+    
+    const actionsEl = document.getElementById('modalActions');
+    const originalHtml = actionsEl.innerHTML;
+    
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const pondWei = ethers.utils.parseEther(pondAmount || '0');
+        const sgbWei = ethers.utils.parseEther(sgbAmount || '0');
+        
+        // Approve POND if needed
+        if (pondWei.gt(0)) {
+            actionsEl.innerHTML = `<button class="modal-btn" disabled>Approving POND...</button>`;
+            const pondContract = new ethers.Contract(CONTRACTS.pondToken, ERC20_ABI, signer);
+            const allowance = await pondContract.allowance(userAddress, CONTRACTS.marketplace);
+            
+            if (allowance.lt(pondWei)) {
+                const approveTx = await pondContract.approve(CONTRACTS.marketplace, pondWei);
+                await approveTx.wait();
+            }
+        }
+        
+        actionsEl.innerHTML = `<button class="modal-btn" disabled>Submitting Offer...</button>`;
+        
+        const tx = await marketplace.makeOffer(collectionAddress, tokenId, pondWei, duration, { value: sgbWei });
+        await tx.wait();
+        
+        showToast('Offer submitted!');
+        closeModal();
+        
+    } catch (err) {
+        console.error('Offer failed:', err);
+        showToast('Offer failed: ' + (err.reason || err.message), 'error');
+        actionsEl.innerHTML = originalHtml;
+    }
+}
+
+async function acceptOffer(collectionAddress, tokenId, offerIndex) {
+    if (!isConnected) return;
+    
+    try {
+        showToast('Accepting offer...');
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.acceptOffer(collectionAddress, tokenId, offerIndex);
+        await tx.wait();
+        
+        showToast('Offer accepted! NFT sold.');
+        closeModal();
+        await loadUserNfts();
+        
+    } catch (err) {
+        console.error('Accept offer failed:', err);
+        showToast('Accept failed: ' + (err.reason || err.message), 'error');
+    }
+}
+
+async function cancelOffer(collectionAddress, tokenId, offerIndex) {
+    if (!isConnected) return;
+    
+    try {
+        showToast('Cancelling offer...');
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
+        const tx = await marketplace.cancelOffer(collectionAddress, tokenId, offerIndex);
+        await tx.wait();
+        
+        showToast('Offer cancelled, funds refunded.');
+        closeModal();
+        
+    } catch (err) {
+        console.error('Cancel offer failed:', err);
         showToast('Cancel failed: ' + (err.reason || err.message), 'error');
     }
 }
