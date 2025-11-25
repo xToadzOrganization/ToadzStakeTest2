@@ -327,40 +327,41 @@ async function loadRecentActivity() {
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
         const staking = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
         
+        console.log('Loading activity...');
         const currentBlock = await readProvider.getBlockNumber();
-        let allEvents = [];
+        console.log('Current block:', currentBlock);
         
-        // Try progressively larger ranges until we get events or hit limit
-        const ranges = [500, 1000, 2000, 3000];
+        const fromBlock = currentBlock - 1000;
+        console.log('Querying from block:', fromBlock, 'to', currentBlock);
         
-        for (const range of ranges) {
-            const fromBlock = Math.max(0, currentBlock - range);
-            
-            try {
-                const [soldEvents, listedEvents, offerEvents, stakedEvents] = await Promise.all([
-                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock).catch(() => []),
-                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock).catch(() => []),
-                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock).catch(() => []),
-                    staking.queryFilter(staking.filters.Staked(), fromBlock, currentBlock).catch(() => [])
-                ]);
-                
-                allEvents = [
-                    ...soldEvents.map(e => ({ type: 'sale', event: e })),
-                    ...listedEvents.map(e => ({ type: 'listing', event: e })),
-                    ...offerEvents.map(e => ({ type: 'offer', event: e })),
-                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
-                ];
-                
-                if (allEvents.length > 0) break; // Found events, stop
-                
-            } catch (err) {
-                console.log(`Range ${range} failed, trying next...`);
-                continue; // Try next range
-            }
-        }
+        // Query each separately so we can see which fails
+        console.log('Fetching sold events...');
+        const soldEvents = await marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock);
+        console.log('Sold events:', soldEvents.length);
+        
+        console.log('Fetching listed events...');
+        const listedEvents = await marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock);
+        console.log('Listed events:', listedEvents.length);
+        
+        console.log('Fetching offer events...');
+        const offerEvents = await marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock);
+        console.log('Offer events:', offerEvents.length);
+        
+        console.log('Fetching staked events...');
+        const stakedEvents = await staking.queryFilter(staking.filters.Staked(), fromBlock, currentBlock);
+        console.log('Staked events:', stakedEvents.length);
+        
+        const allEvents = [
+            ...soldEvents.map(e => ({ type: 'sale', event: e })),
+            ...listedEvents.map(e => ({ type: 'listing', event: e })),
+            ...offerEvents.map(e => ({ type: 'offer', event: e })),
+            ...stakedEvents.map(e => ({ type: 'staked', event: e }))
+        ];
+        
+        console.log('Total events:', allEvents.length);
         
         if (allEvents.length === 0) {
-            activityList.innerHTML = '<div class="activity-loading">No recent activity</div>';
+            activityList.innerHTML = '<div class="activity-loading">No events in last 1000 blocks</div>';
             return;
         }
         
@@ -375,9 +376,11 @@ async function loadRecentActivity() {
             if (item) activityList.appendChild(item);
         }
         
+        console.log('Activity feed loaded');
+        
     } catch (err) {
         console.error('Error loading activity:', err);
-        activityList.innerHTML = '<div class="activity-loading">Activity unavailable</div>';
+        activityList.innerHTML = `<div class="activity-loading">Error: ${err.message}</div>`;
     }
 }
 
