@@ -90,7 +90,7 @@ const COLLECTIONS = [
         supply: 1000,
         description: 'The original Fat Cats on Songbird.',
         image: 'https://ipfs.io/ipfs/QmQFNZXPuL4efM8Dp5j2bme6zySaYEYTNmn1CF2KjAja2A/5.png',
-        baseUri: 'https://ipfs.io/ipfs/QmSDmNVAXnEandkTaCpiU4wEBzp7Hjv8Wyy8ZHb9BPzYWo/',
+        baseUri: 'https://ipfs.io/ipfs/QmQFNZXPuL4efM8Dp5j2bme6zySaYEYTNmn1CF2KjAja2A/',
         featured: false,
         jsonFile: '0x0e759aa7166ab3b2b81abd6d9ed16ac83368f97e.json'
     },
