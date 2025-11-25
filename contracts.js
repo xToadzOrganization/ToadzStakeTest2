@@ -55,7 +55,7 @@ const COLLECTIONS = [
         thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
+        jsonFile: '0x35afb6ba51839dedd33140a3b704b39933d1e642.json'
     },
     {
         address: CONTRACTS.luxuryLofts,
@@ -67,7 +67,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
+        jsonFile: '0x91aa85a172dd3e7eea4ad1a4b33e90cbf3b99ed8.json'
     },
     {
         address: CONTRACTS.songbirdCity,
@@ -79,7 +79,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         featured: true,
         stakeable: true,
-        jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
+        jsonFile: '0x360f8b7d9530f55ab8e52394e6527935635f51e7.json'
     },
     
     // === Fat Family ===
@@ -104,7 +104,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmeW1iCPC4zyFkfFMarhWosUwXYmBTg1PaYEcZv2GtoreY/',
         featured: false,
-        jsonFile: '0x12c40516c7bf32002FF0e3431082C9e28Ab76066.json'
+        jsonFile: '0x12c40516c7bf32002ff0e3431082c9e28ab76066.json'
     },
     {
         address: CONTRACTS.fatTigers,
@@ -116,7 +116,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmYuLjrHG9dDDc8bYSjkS7F2Tefx9otDkA8ET7nfPdaT4n/',
         featured: false,
-        jsonFile: '0xFdD87A263ba929E14Dd0A2D879D9C66d5c8fF3ae.json'
+        jsonFile: '0xfdd87a263ba929e14dd0a2d879d9c66d5c8ff3ae.json'
     },
     
     // === Other Popular Collections ===
@@ -130,7 +130,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmV3yAjc2WXQNZycGq3G8B6KGfNZutJFcQM3UuCRiXYgBH/',
         featured: false,
-        jsonFile: '0xCdB019C0990c033724DA55f5A04bE6fd6ec1809d.json'
+        jsonFile: '0xcdb019c0990c033724da55f5a04be6fd6ec1809d.json'
     },
     {
         address: CONTRACTS.sparklesGenesis,
@@ -142,7 +142,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/',
         featured: false,
-        jsonFile: '0xd167c20575c284dF75BCfe1794d54d3E057Cd4EC.json'
+        jsonFile: '0xd167c20575c284df75bcfe1794d54d3e057cd4ec.json'
     },
     {
         address: CONTRACTS.songbirdPunks,
@@ -154,7 +154,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmVEABGSJp2YSXYdULyJuiJLLbeSrexf2iY3zmZrecc5u8/',
         featured: false,
-        jsonFile: '0xd83Ae2C70916a2360e23683A0d3a3556b2c09935.json'
+        jsonFile: '0xd83ae2c70916a2360e23683a0d3a3556b2c09935.json'
     },
     {
         address: CONTRACTS.doodcats,
@@ -166,7 +166,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmdjzdH9N5QYpBVRc3FoKo2z77piHHrzh6QstztVA8TfyE/',
         featured: false,
-        jsonFile: '0x279a222a18C033124Ab02290dDec97912A8b7185.json'
+        jsonFile: '0x279a222a18c033124ab02290ddec97912a8b7185.json'
     },
     {
         address: CONTRACTS.bazookaChicks,
@@ -178,7 +178,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmNSQh2m4aozJESozZnCj37szuiRvyab57Nkqd25HeGMHY/',
         featured: false,
-        jsonFile: '0x2972ea6e6CC45c5837CE909DeF032DD325B48415.json'
+        jsonFile: '0x2972ea6e6cc45c5837ce909def032dd325b48415.json'
     },
     {
         address: CONTRACTS.grumpyMonkeys,
@@ -201,7 +201,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmV6fgsPwsT3kbUPoHyeMrZ7Cx761pmMg82sKLgghAVeKy/',
         featured: false,
-        jsonFile: '0x34FF649D709ccCEc77bCf433317176fD13246296.json'
+        jsonFile: '0x34ff649d709cccec77bcf433317176fd13246296.json'
     },
     {
         address: CONTRACTS.superBadBabies,
@@ -213,7 +213,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
         featured: false,
-        jsonFile: '0x23A18A46c67301864f5b341e87f89B8Ccb690c44.json'
+        jsonFile: '0x23a18a46c67301864f5b341e87f89b8ccb690c44.json'
     },
     {
         address: CONTRACTS.superBadGenesis,
@@ -225,7 +225,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
         featured: false,
-        jsonFile: '0xf4b4D366f9B4855690Bb7530abC76C857B259093.json'
+        jsonFile: '0xf4b4d366f9b4855690bb7530abc76c857b259093.json'
     },
     {
         address: CONTRACTS.innerCircle888,
@@ -237,7 +237,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
         thumbnailUri: 'https://ipfs.io/ipfs/QmNiEd6pymnSambZraBWn5NCqGXUJwbUFxKHW1mhUX7Vxw/',
         featured: false,
-        jsonFile: '0xfF063937523c4514179A4d9A6769694bAab357A8.json'
+        jsonFile: '0xff063937523c4514179a4d9a6769694baab357a8.json'
     },
     {
         address: CONTRACTS.theGrungies,
@@ -249,7 +249,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
         thumbnailUri: 'https://ipfs.io/ipfs/bafybeigl7q35qc5bqgcpwtjs6dpahquf4iloyd34taidrwhdkvgz2czzeu/',
         featured: false,
-        jsonFile: '0x4F52A074De9f2651d2f711FEe63FEe9E3b439A7e.json'
+        jsonFile: '0x4f52a074de9f2651d2f711fee63fee9e3b439a7e.json'
     },
     {
         address: CONTRACTS.theSenators,
@@ -261,7 +261,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
         thumbnailUri: 'https://ipfs.io/ipfs/bafybeia3lq7i5jfprtohxiqtmy5olprhwchs4zih3vmerz5zueudjij5hu/',
         featured: false,
-        jsonFile: '0x927463265eDE6a52604D179d7110B7B2fc057a3f.json'
+        jsonFile: '0x927463265ede6a52604d179d7110b7b2fc057a3f.json'
     },
     {
         address: CONTRACTS.fort,
@@ -273,7 +273,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
         thumbnailUri: 'https://ipfs.io/ipfs/Qmbdb3opaLGKqJi1yD5uAohJMVmqSgArQvZVohEuW6YddB/',
         featured: false,
-        jsonFile: '0x3157537399860305ebE9e7fd17cfA00AAE291c82.json'
+        jsonFile: '0x3157537399860305ebe9e7fd17cfa00aae291c82.json'
     }
 ];
 
