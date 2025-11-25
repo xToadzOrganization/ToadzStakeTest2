@@ -327,21 +327,38 @@ async function loadRecentActivity() {
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
         
         const currentBlock = await readProvider.getBlockNumber();
-        const fromBlock = Math.max(0, currentBlock - 500); // Last ~500 blocks (~15 min)
+        const allEvents = [];
+        const chunkSize = 30; // Songbird RPC limit
+        const maxChunks = 50; // Don't go back more than 1500 blocks
         
-        // Fetch events in parallel
-        const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
-            marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock),
-            marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock),
-            marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock)
-        ]);
+        // Keep fetching chunks until we have 20 events or hit max chunks
+        for (let i = 0; i < maxChunks && allEvents.length < 20; i++) {
+            const toBlock = currentBlock - (i * chunkSize);
+            const fromBlock = Math.max(0, toBlock - chunkSize + 1);
+            
+            if (fromBlock <= 0) break;
+            
+            try {
+                // Fetch events in parallel for this chunk
+                const [soldEvents, listedEvents, offerAcceptedEvents] = await Promise.all([
+                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock),
+                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock),
+                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock)
+                ]);
+                
+                allEvents.push(
+                    ...soldEvents.map(e => ({ type: 'sale', event: e })),
+                    ...listedEvents.map(e => ({ type: 'listing', event: e })),
+                    ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
+                );
+            } catch (err) {
+                console.log(`Error fetching chunk ${i}:`, err.message);
+                break; // Stop on error
+            }
+        }
         
-        // Combine and sort by block number (most recent first)
-        const allEvents = [
-            ...soldEvents.map(e => ({ type: 'sale', event: e })),
-            ...listedEvents.map(e => ({ type: 'listing', event: e })),
-            ...offerAcceptedEvents.map(e => ({ type: 'offer', event: e }))
-        ].sort((a, b) => b.event.blockNumber - a.event.blockNumber);
+        // Sort by block number (most recent first)
+        allEvents.sort((a, b) => b.event.blockNumber - a.event.blockNumber);
         
         // Take most recent 20
         const recentEvents = allEvents.slice(0, 20);
