@@ -1332,12 +1332,17 @@ body {
     .lp-info-grid {
         grid-template-columns: 1fr;
     }
+    
+    .collection-nfts-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
 }
 
 @media (max-width: 480px) {
     .my-nfts-grid,
-    .staked-nfts-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .staked-nfts-grid,
+    .collection-nfts-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px;
     }
     
