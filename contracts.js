@@ -130,5 +130,11 @@ const MARKETPLACE_ABI = [
     'function getStats() view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales)',
     'function getCollectionStats(address collection) view returns (uint256 volumeSGB, uint256 volumePOND, uint256 sales)',
     'function getActiveListings(address collection) view returns (uint256[])',
-    'function getActiveListingCount(address collection) view returns (uint256)'
+    'function getActiveListingCount(address collection) view returns (uint256)',
+    'event Listed(address indexed collection, uint256 indexed tokenId, address indexed seller, uint256 priceSGB, uint256 pricePOND)',
+    'event Unlisted(address indexed collection, uint256 indexed tokenId, address indexed seller)',
+    'event Sold(address indexed collection, uint256 indexed tokenId, address seller, address indexed buyer, uint256 priceSGB, uint256 pricePOND)',
+    'event OfferMade(address indexed collection, uint256 indexed tokenId, address indexed buyer, uint256 amountSGB, uint256 amountPOND, uint256 expiry)',
+    'event OfferAccepted(address indexed collection, uint256 indexed tokenId, address seller, address indexed buyer, uint256 amountSGB, uint256 amountPOND)',
+    'event OfferCancelled(address indexed collection, uint256 indexed tokenId, address indexed buyer)'
 ];
