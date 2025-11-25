@@ -331,37 +331,49 @@ async function loadRecentActivity() {
         const currentBlock = await readProvider.getBlockNumber();
         console.log('Current block:', currentBlock);
         
-        const fromBlock = currentBlock - 1000;
-        console.log('Querying from block:', fromBlock, 'to', currentBlock);
+        const allEvents = [];
+        const maxChunks = 100; // Go back max 3000 blocks
+        const chunkSize = 30; // Songbird limit
         
-        // Query each separately so we can see which fails
-        console.log('Fetching sold events...');
-        const soldEvents = await marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, currentBlock);
-        console.log('Sold events:', soldEvents.length);
+        // Query in 30-block chunks
+        for (let i = 0; i < maxChunks && allEvents.length < 20; i++) {
+            const toBlock = currentBlock - (i * chunkSize);
+            const fromBlock = toBlock - chunkSize + 1;
+            
+            if (fromBlock < 0) break;
+            
+            console.log(`Chunk ${i}: blocks ${fromBlock} to ${toBlock}`);
+            
+            try {
+                const [soldEvents, listedEvents, offerEvents, stakedEvents] = await Promise.all([
+                    marketplace.queryFilter(marketplace.filters.Sold(), fromBlock, toBlock),
+                    marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, toBlock),
+                    marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, toBlock),
+                    staking.queryFilter(staking.filters.Staked(), fromBlock, toBlock)
+                ]);
+                
+                console.log(`Chunk ${i}: ${soldEvents.length} sales, ${listedEvents.length} listings, ${offerEvents.length} offers, ${stakedEvents.length} stakes`);
+                
+                allEvents.push(
+                    ...soldEvents.map(e => ({ type: 'sale', event: e })),
+                    ...listedEvents.map(e => ({ type: 'listing', event: e })),
+                    ...offerEvents.map(e => ({ type: 'offer', event: e })),
+                    ...stakedEvents.map(e => ({ type: 'staked', event: e }))
+                );
+                
+                // Stop if we have enough
+                if (allEvents.length >= 20) break;
+                
+            } catch (err) {
+                console.log(`Chunk ${i} failed:`, err.message);
+                break;
+            }
+        }
         
-        console.log('Fetching listed events...');
-        const listedEvents = await marketplace.queryFilter(marketplace.filters.Listed(), fromBlock, currentBlock);
-        console.log('Listed events:', listedEvents.length);
-        
-        console.log('Fetching offer events...');
-        const offerEvents = await marketplace.queryFilter(marketplace.filters.OfferAccepted(), fromBlock, currentBlock);
-        console.log('Offer events:', offerEvents.length);
-        
-        console.log('Fetching staked events...');
-        const stakedEvents = await staking.queryFilter(staking.filters.Staked(), fromBlock, currentBlock);
-        console.log('Staked events:', stakedEvents.length);
-        
-        const allEvents = [
-            ...soldEvents.map(e => ({ type: 'sale', event: e })),
-            ...listedEvents.map(e => ({ type: 'listing', event: e })),
-            ...offerEvents.map(e => ({ type: 'offer', event: e })),
-            ...stakedEvents.map(e => ({ type: 'staked', event: e }))
-        ];
-        
-        console.log('Total events:', allEvents.length);
+        console.log('Total events found:', allEvents.length);
         
         if (allEvents.length === 0) {
-            activityList.innerHTML = '<div class="activity-loading">No events in last 1000 blocks</div>';
+            activityList.innerHTML = '<div class="activity-loading">No recent activity</div>';
             return;
         }
         
