@@ -394,7 +394,7 @@ function createActivityItemFromIndexer(event) {
     
     // Get image URL
     let imageUrl = collection.thumbnailUri 
-        ? collection.thumbnailUri + event.token_id + '.png'
+        ? collection.thumbnailUri + event.token_id + (collection.imageExt || '.png')
         : collection.image;
     
     const item = document.createElement('div');
@@ -829,7 +829,7 @@ function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed
     if (!imageUrl) {
         if (collection.thumbnailUri) {
             // Use fast PNG thumbnails
-            imageUrl = collection.thumbnailUri + tokenId + '.png';
+            imageUrl = collection.thumbnailUri + tokenId + (collection.imageExt || '.png');
         } else {
             // Get from metadata
             const metadata = collectionMetadata[collection.address];
@@ -838,7 +838,7 @@ function createNftCard(collection, tokenId, isStaked, imageUrlOverride, isListed
             }
             if (!imageUrl) {
                 // Fallback to baseUri
-                imageUrl = collection.baseUri + tokenId + '.png';
+                imageUrl = collection.baseUri + tokenId + (collection.imageExt || '.png');
             }
         }
     }
@@ -1097,8 +1097,8 @@ async function loadCollectionNfts(collection, append = false) {
         card.dataset.price = listing ? listing.sortPrice : 0;
         
         let imageUrl = collection.thumbnailUri 
-            ? collection.thumbnailUri + tokenId + '.png'
-            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+            ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
+            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + (collection.imageExt || '.png'));
         
         const listedBadge = listing ? '<div class="listed-badge">LISTED</div>' : '';
         const priceDisplay = listing ? `<div class="nft-price">${listing.priceText}</div>` : '';
@@ -1193,8 +1193,8 @@ async function loadListedNfts(collection, grid) {
         const nftData = metadata[tokenId];
         
         let imageUrl = collection.thumbnailUri
-            ? collection.thumbnailUri + tokenId + '.png'
-            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + '.png');
+            ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
+            : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + (collection.imageExt || '.png'));
         
         let priceText = '';
         if (listing.priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(listing.priceSGB)).toFixed(2) + ' SGB';
@@ -1296,9 +1296,9 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
         }
         if (!imageUrl) {
             if (collection.baseUri.includes('ipfs://')) {
-                imageUrl = ipfsToHttp(collection.baseUri) + tokenId + '.png';
+                imageUrl = ipfsToHttp(collection.baseUri) + tokenId + (collection.imageExt || '.png');
             } else if (collection.baseUri.endsWith('/')) {
-                imageUrl = collection.baseUri + tokenId + '.png';
+                imageUrl = collection.baseUri + tokenId + (collection.imageExt || '.png');
             } else {
                 imageUrl = collection.baseUri;
             }
