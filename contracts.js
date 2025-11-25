@@ -205,9 +205,8 @@ const COLLECTIONS = [
         symbol: 'SBB',
         supply: 3333,
         description: 'Super Bad Babies on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmbkGuLePd9rgtyfzkV5iJnbKEYhkd4R6zcyQ9X9X6g12Q/',
+        image: 'https://ipfs.io/ipfs/QmQu7WpSL7jsLawmfHCc1V5Jqi4Wun8rzouhWSQBuUkfjU/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmQu7WpSL7jsLawmfHCc1V5Jqi4Wun8rzouhWSQBuUkfjU/',
         featured: false,
         jsonFile: '0x23a18a46c67301864f5b341e87f89b8ccb690c44.json'
     },
