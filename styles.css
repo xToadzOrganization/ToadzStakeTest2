@@ -322,8 +322,9 @@ body {
 /* ==================== COLLECTIONS GRID ==================== */
 .collections-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
     gap: 20px;
+    justify-content: center;
 }
 
 .collection-card {
@@ -333,34 +334,7 @@ body {
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s;
-}
-
-.collection-card:hover {
-    border-color: var(--green-primary);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-}
-
-.collection-banner {
-    height: 120px;
-    background: var(--bg-tertiary);
-    position: relative;
-    overflow: hidden;
-}
-
-.collection-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.collection-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s;
+    max-width: 400px;
 }
 
 .collection-card:hover {
@@ -1031,6 +1005,7 @@ body {
 
 .modal-info {
     padding: 24px;
+    overflow-x: hidden;
 }
 
 .modal-info h2 {
@@ -1085,8 +1060,14 @@ body {
 
 .modal-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 24px;
+}
+
+.modal-actions > .offer-form {
+    width: 100%;
+    flex-basis: 100%;
 }
 
 .modal-btn {
@@ -1205,6 +1186,11 @@ body {
     
     .collections-grid {
         grid-template-columns: 1fr;
+        justify-content: stretch;
+    }
+    
+    .collection-card {
+        max-width: 100%;
     }
     
     .modal-body {
