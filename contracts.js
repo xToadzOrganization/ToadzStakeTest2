@@ -135,8 +135,8 @@ const COLLECTIONS = [
         symbol: 'SPARKLE',
         supply: 9999,
         description: 'Sparkles Genesis collection.',
-        image: 'https://ipfs.io/ipfs/QmXe2RLWnagcD62nSxr45CwA9vPKVNoALwazY9UbiVNF6g/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmfZhkQgWgG98JmaoaiUR5qNYPJh6ZS6HVFk5U6gRPaf1W/',
+        image: 'https://ipfs.io/ipfs/QmZbZvhjja1qhMbZN3tCfntRa2XPC88QB8PBSowgJfw5vw/1.png',
+        baseUri: 'https://ipfs.io/ipfs/QmZbZvhjja1qhMbZN3tCfntRa2XPC88QB8PBSowgJfw5vw/',
         featured: false,
         jsonFile: '0xd167c20575c284df75bcfe1794d54d3e057cd4ec.json'
     },
