@@ -216,9 +216,8 @@ const COLLECTIONS = [
         symbol: 'SBGS',
         supply: 666,
         description: 'Super Bad Genesis Seed on Songbird.',
-        image: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/1.png',
-        baseUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
-        thumbnailUri: 'https://ipfs.io/ipfs/QmPWDzHNbD6QghZ5ajRELFjKNQWSRh4G3qjfYjkgUPfqNX/',
+        image: 'https://ipfs.io/ipfs/Qmc8P7CWMWT9s9nu31wCUPJs69Ts9EFZhwa8zNeVotbL6C/1.png',
+        baseUri: 'https://ipfs.io/ipfs/Qmc8P7CWMWT9s9nu31wCUPJs69Ts9EFZhwa8zNeVotbL6C/',
         featured: false,
         jsonFile: '0xf4b4d366f9b4855690bb7530abc76c857b259093.json'
     },
