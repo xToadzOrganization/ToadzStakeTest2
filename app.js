@@ -317,13 +317,10 @@ async function loadCollectionFloors() {
             const results = await Promise.all(activeTokenIds.map(async (tokenId) => {
                 try {
                     const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
-                    console.log(`Token ${tokenId}: active=${active}, SGB=${priceSGB.toString()}, POND=${pricePOND.toString()}`);
                     if (!active) return null;
                     
                     const sgbPrice = priceSGB.gt(0) ? parseFloat(ethers.utils.formatEther(priceSGB)) : null;
                     const pondPrice = pricePOND.gt(0) ? parseFloat(ethers.utils.formatEther(pricePOND)) : null;
-                    
-                    console.log(`Token ${tokenId}: sgbPrice=${sgbPrice}, pondPrice=${pondPrice}`);
                     
                     // Calculate SGB equivalent for comparison
                     let sgbEquivalent = Infinity;
@@ -347,16 +344,12 @@ async function loadCollectionFloors() {
                         displayPrice = formatNumber(pondPrice) + ' POND';
                     }
                     
-                    console.log(`Token ${tokenId}: sgbEquivalent=${sgbEquivalent}, display=${displayPrice}`);
                     return { sgbEquivalent, displayPrice };
-                } catch (err) {
-                    console.error('Error getting listing:', err);
-                }
+                } catch {}
                 return null;
             }));
             
             const validPrices = results.filter(p => p !== null && p.sgbEquivalent < Infinity);
-            console.log(`${col.name}: valid prices:`, validPrices);
             
             if (validPrices.length > 0) {
                 // Find lowest price
@@ -958,9 +951,7 @@ async function loadListedNfts(collection, grid) {
     }
     
     // Use new getActiveListings - instant!
-    console.log('Fetching active listings for', collection.name, collection.address);
     const tokenIds = await marketplace.getActiveListings(collection.address);
-    console.log('Active listing token IDs:', tokenIds.map(t => t.toString()));
     
     if (tokenIds.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
