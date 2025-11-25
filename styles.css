@@ -320,6 +320,12 @@ body {
 }
 
 /* ==================== COLLECTIONS GRID ==================== */
+.collections-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+}
+
 .collections-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
@@ -410,6 +416,117 @@ body {
     font-size: 11px;
     font-weight: 600;
     margin-top: 12px;
+}
+
+/* ==================== ACTIVITY FEED ==================== */
+.activity-feed {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.activity-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.activity-loading {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 20px;
+}
+
+.activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.activity-item:hover {
+    border-color: var(--green-primary);
+    transform: translateX(2px);
+}
+
+.activity-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.activity-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-type {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.activity-type.sale {
+    color: var(--green-primary);
+}
+
+.activity-type.listing {
+    color: var(--text-secondary);
+}
+
+.activity-type.offer {
+    color: var(--orange-primary);
+}
+
+.activity-details {
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--green-primary);
+}
+
+.activity-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
 }
 
 /* ==================== COLLECTION DETAIL VIEW ==================== */
@@ -1182,6 +1299,16 @@ body {
     .featured-stats {
         width: 100%;
         justify-content: space-around;
+    }
+    
+    .collections-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .activity-feed {
+        position: static;
+        max-height: 500px;
+        order: -1; /* Show activity feed before collections on mobile */
     }
     
     .collections-grid {
