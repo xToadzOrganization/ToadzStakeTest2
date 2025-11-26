@@ -109,8 +109,10 @@ async function loadCollectionMetadata() {
                     
                     collectionMetadata[col.address] = data;
                     
-                    // Calculate rarity scores
-                    calculateRarity(col.address, data);
+                    // Calculate rarity scores (skip if noRarity flag)
+                    if (!col.noRarity) {
+                        calculateRarity(col.address, data);
+                    }
                 }
             } catch (err) {
                 console.log(`Could not load metadata for ${col.name}:`, err.message);
@@ -1192,7 +1194,7 @@ async function loadCollectionNfts(collection, append = false) {
         const rarity = rarityData[tokenId];
         const totalSupply = Object.keys(metadata).length;
         const rarityTier = rarity ? getRarityTier(rarity.rank, totalSupply) : null;
-        const rarityBadge = rarityTier ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
+        const rarityBadge = (rarityTier && !collection.noRarity) ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
         
         let imageUrl = collection.thumbnailUri 
             ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
@@ -1296,7 +1298,7 @@ async function loadListedNfts(collection, grid) {
         const rarity = rarityData[tokenId];
         const totalSupply = Object.keys(metadata).length;
         const rarityTier = rarity ? getRarityTier(rarity.rank, totalSupply) : null;
-        const rarityBadge = rarityTier ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
+        const rarityBadge = (rarityTier && !collection.noRarity) ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
         
         let imageUrl = collection.thumbnailUri
             ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
@@ -1424,7 +1426,7 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
     
     // Add rarity info
     const rarityData = collectionRarity[collection.address];
-    if (rarityData && rarityData[tokenId]) {
+    if (rarityData && rarityData[tokenId] && !collection.noRarity) {
         const rarity = rarityData[tokenId];
         const totalSupply = Object.keys(metadata || {}).length;
         const rarityTier = getRarityTier(rarity.rank, totalSupply);
