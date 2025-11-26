@@ -995,18 +995,146 @@ let collectionLoadOffset = 0;
 let collectionViewMode = 'all';
 let isLoadingMore = false;
 let collectionObserver = null;
+let activeTraitFilters = {}; // { trait_type: value }
+
+// Extract unique traits from collection metadata
+function getCollectionTraits(collectionAddress) {
+    const metadata = collectionMetadata[collectionAddress];
+    if (!metadata) return {};
+    
+    const traits = {}; // { trait_type: Set of values }
+    
+    for (const tokenId of Object.keys(metadata)) {
+        const nft = metadata[tokenId];
+        if (!nft.attributes) continue;
+        
+        for (const attr of nft.attributes) {
+            if (!attr.trait_type || !attr.value) continue;
+            if (!traits[attr.trait_type]) {
+                traits[attr.trait_type] = new Set();
+            }
+            traits[attr.trait_type].add(attr.value);
+        }
+    }
+    
+    // Convert sets to sorted arrays
+    const result = {};
+    for (const [traitType, values] of Object.entries(traits)) {
+        result[traitType] = Array.from(values).sort();
+    }
+    return result;
+}
+
+// Build trait filter dropdowns HTML
+function buildTraitFiltersHtml(collectionAddress) {
+    const traits = getCollectionTraits(collectionAddress);
+    if (Object.keys(traits).length === 0) return '';
+    
+    let html = '<div class="trait-filters" id="traitFilters">';
+    html += '<button class="trait-filter-toggle" onclick="toggleTraitFilters()">Filters ▼</button>';
+    html += '<div class="trait-filter-dropdowns" id="traitFilterDropdowns" style="display:none;">';
+    
+    for (const [traitType, values] of Object.entries(traits)) {
+        html += `
+            <select class="trait-filter-select" data-trait="${traitType}" onchange="applyTraitFilter('${traitType}', this.value)">
+                <option value="">${traitType}</option>
+                ${values.map(v => `<option value="${v}">${v} (${countTraitValue(collectionAddress, traitType, v)})</option>`).join('')}
+            </select>
+        `;
+    }
+    
+    html += '<button class="clear-filters-btn" onclick="clearTraitFilters()">Clear All</button>';
+    html += '</div></div>';
+    return html;
+}
+
+// Count how many NFTs have a specific trait value
+function countTraitValue(collectionAddress, traitType, value) {
+    const metadata = collectionMetadata[collectionAddress];
+    if (!metadata) return 0;
+    
+    let count = 0;
+    for (const tokenId of Object.keys(metadata)) {
+        const nft = metadata[tokenId];
+        if (!nft.attributes) continue;
+        
+        for (const attr of nft.attributes) {
+            if (attr.trait_type === traitType && attr.value === value) {
+                count++;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+function toggleTraitFilters() {
+    const dropdowns = document.getElementById('traitFilterDropdowns');
+    const toggle = document.querySelector('.trait-filter-toggle');
+    if (dropdowns.style.display === 'none') {
+        dropdowns.style.display = 'flex';
+        toggle.textContent = 'Filters ▲';
+    } else {
+        dropdowns.style.display = 'none';
+        toggle.textContent = 'Filters ▼';
+    }
+}
+
+function applyTraitFilter(traitType, value) {
+    if (value) {
+        activeTraitFilters[traitType] = value;
+    } else {
+        delete activeTraitFilters[traitType];
+    }
+    
+    // Reset and reload
+    collectionLoadOffset = 0;
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    loadCollectionNfts(currentCollectionView);
+}
+
+function clearTraitFilters() {
+    activeTraitFilters = {};
+    
+    // Reset all dropdowns
+    document.querySelectorAll('.trait-filter-select').forEach(select => {
+        select.value = '';
+    });
+    
+    // Reload
+    collectionLoadOffset = 0;
+    document.getElementById('collectionNftsGrid').innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+    loadCollectionNfts(currentCollectionView);
+}
+
+// Check if NFT passes current trait filters
+function passesTraitFilters(nft) {
+    if (Object.keys(activeTraitFilters).length === 0) return true;
+    if (!nft || !nft.attributes) return false;
+    
+    for (const [traitType, requiredValue] of Object.entries(activeTraitFilters)) {
+        const hasMatch = nft.attributes.some(attr => 
+            attr.trait_type === traitType && attr.value === requiredValue
+        );
+        if (!hasMatch) return false;
+    }
+    return true;
+}
 
 function openCollectionView(collection) {
     currentCollectionView = collection;
     collectionLoadOffset = 0;
     collectionViewMode = 'all';
     isLoadingMore = false;
+    activeTraitFilters = {}; // Reset trait filters
     
     // Update URL hash
     history.pushState(null, '', `#collection/${collection.address.toLowerCase()}`);
     
     const grid = document.getElementById('collectionsGrid');
     grid.style.display = 'block';
+    
+    const traitFiltersHtml = buildTraitFiltersHtml(collection.address);
     
     grid.innerHTML = `
         <div class="collection-detail-view">
@@ -1025,6 +1153,7 @@ function openCollectionView(collection) {
                     </div>
                 </div>
             </div>
+            ${traitFiltersHtml}
             <div class="collection-detail-filters">
                 <div class="view-toggle">
                     <button class="view-btn active" data-view="all" onclick="switchCollectionView('all')">All</button>
@@ -1189,6 +1318,11 @@ async function loadCollectionNfts(collection, append = false) {
         tokenIds = sortBy === 'id-desc' 
             ? allTokenIds.sort((a, b) => b - a)
             : allTokenIds.sort((a, b) => a - b);
+    }
+    
+    // Apply trait filters
+    if (Object.keys(activeTraitFilters).length > 0) {
+        tokenIds = tokenIds.filter(tokenId => passesTraitFilters(metadata[tokenId]));
     }
     
     // Paginate
