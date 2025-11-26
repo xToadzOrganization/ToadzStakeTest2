@@ -94,6 +94,16 @@ function handleHashRoute() {
         }
     }
     
+    // Handle user profile routes: #user/0x123...
+    if (hash.startsWith('user/')) {
+        const address = hash.split('/')[1];
+        if (ethers.utils.isAddress(address)) {
+            switchTab('collections', false);
+            setTimeout(() => openUserProfile(address), 100);
+            return;
+        }
+    }
+    
     if (hash && validTabs.includes(hash)) {
         switchTab(hash, false); // false = don't update hash again
     }
@@ -1229,6 +1239,284 @@ function closeCollectionView() {
     loadCollections();
 }
 
+// ==================== USER PROFILES ====================
+let currentProfileAddress = null;
+
+async function openUserProfile(address) {
+    currentProfileAddress = address.toLowerCase();
+    currentCollectionView = null;
+    
+    history.pushState(null, '', `#user/${currentProfileAddress}`);
+    
+    const grid = document.getElementById('collectionsGrid');
+    grid.style.display = 'block';
+    
+    const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+    
+    grid.innerHTML = `
+        <div class="user-profile-view">
+            <div class="profile-header">
+                <button class="back-btn" onclick="closeUserProfile()">← Back</button>
+                <div class="profile-info">
+                    <div class="profile-avatar">${address.slice(2, 4).toUpperCase()}</div>
+                    <div class="profile-text">
+                        <h2>${shortAddr}</h2>
+                        <a href="https://songbird-explorer.flare.network/address/${address}" target="_blank" class="profile-link">
+                            View on Explorer ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-stats" id="profileStats">
+                <div class="profile-stat">
+                    <span class="stat-value" id="statNftsOwned">-</span>
+                    <span class="stat-label">NFTs Owned</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="stat-value" id="statListings">-</span>
+                    <span class="stat-label">Active Listings</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="stat-value" id="statVolume">-</span>
+                    <span class="stat-label">Volume Traded</span>
+                </div>
+            </div>
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" data-tab="owned" onclick="switchProfileTab('owned')">Owned</button>
+                <button class="profile-tab-btn" data-tab="listings" onclick="switchProfileTab('listings')">Listings</button>
+                <button class="profile-tab-btn" data-tab="activity" onclick="switchProfileTab('activity')">Activity</button>
+            </div>
+            <div class="profile-content" id="profileContent">
+                <div class="empty-state"><p>Loading...</p></div>
+            </div>
+        </div>
+    `;
+    
+    loadUserProfileData(address);
+}
+
+function closeUserProfile() {
+    currentProfileAddress = null;
+    history.pushState(null, '', '#collections');
+    loadCollections();
+}
+
+async function loadUserProfileData(address) {
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    
+    // Load owned NFTs across all collections
+    let ownedNfts = [];
+    let activeListings = [];
+    
+    for (const col of COLLECTIONS) {
+        try {
+            const nftContract = new ethers.Contract(col.address, ERC721_ABI, readProvider);
+            const balance = await nftContract.balanceOf(address);
+            
+            if (balance.toNumber() > 0) {
+                // Get token IDs - try tokenOfOwnerByIndex if available
+                for (let i = 0; i < Math.min(balance.toNumber(), 50); i++) {
+                    try {
+                        const tokenId = await nftContract.tokenOfOwnerByIndex(address, i);
+                        ownedNfts.push({
+                            collection: col,
+                            tokenId: tokenId.toNumber()
+                        });
+                    } catch {
+                        break; // tokenOfOwnerByIndex not supported
+                    }
+                }
+            }
+        } catch (err) {
+            console.log(`Error checking ${col.name}:`, err.message);
+        }
+    }
+    
+    // Get active listings for this user
+    try {
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+        
+        for (const col of COLLECTIONS) {
+            try {
+                const listedIds = await marketplace.getActiveListings(col.address);
+                for (const tokenId of listedIds) {
+                    const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(col.address, tokenId);
+                    if (active && seller.toLowerCase() === address.toLowerCase()) {
+                        let priceText = '';
+                        if (priceSGB.gt(0)) priceText = parseFloat(ethers.utils.formatEther(priceSGB)).toFixed(2) + ' SGB';
+                        if (pricePOND.gt(0)) {
+                            if (priceText) priceText += ' / ';
+                            priceText += formatNumber(parseFloat(ethers.utils.formatEther(pricePOND))) + ' POND';
+                        }
+                        activeListings.push({
+                            collection: col,
+                            tokenId: tokenId.toNumber ? tokenId.toNumber() : Number(tokenId),
+                            priceText
+                        });
+                    }
+                }
+            } catch {}
+        }
+    } catch (err) {
+        console.log('Error loading listings:', err.message);
+    }
+    
+    // Get volume from indexer
+    let volumeTraded = 0;
+    try {
+        const response = await fetch(`${INDEXER_URL}/user/${address}/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            volumeTraded = stats.volumeSGB || 0;
+        }
+    } catch {}
+    
+    // Update stats
+    document.getElementById('statNftsOwned').textContent = ownedNfts.length;
+    document.getElementById('statListings').textContent = activeListings.length;
+    document.getElementById('statVolume').textContent = formatNumber(volumeTraded) + ' SGB';
+    
+    // Store for tab switching
+    window.profileData = { ownedNfts, activeListings, address };
+    
+    // Load owned tab by default
+    renderProfileOwned(ownedNfts);
+}
+
+function switchProfileTab(tab) {
+    document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    
+    const content = document.getElementById('profileContent');
+    
+    if (tab === 'owned') {
+        renderProfileOwned(window.profileData?.ownedNfts || []);
+    } else if (tab === 'listings') {
+        renderProfileListings(window.profileData?.activeListings || []);
+    } else if (tab === 'activity') {
+        renderProfileActivity(window.profileData?.address);
+    }
+}
+
+function renderProfileOwned(nfts) {
+    const content = document.getElementById('profileContent');
+    
+    if (nfts.length === 0) {
+        content.innerHTML = '<div class="empty-state"><p>No NFTs owned</p></div>';
+        return;
+    }
+    
+    content.innerHTML = '<div class="profile-nfts-grid"></div>';
+    const grid = content.querySelector('.profile-nfts-grid');
+    
+    for (const nft of nfts) {
+        const metadata = collectionMetadata[nft.collection.address]?.[nft.tokenId];
+        const imageUrl = metadata?.image ? ipfsToHttp(metadata.image) : nft.collection.image;
+        
+        const card = document.createElement('div');
+        card.className = 'nft-card';
+        card.innerHTML = `
+            <div class="nft-image-container">
+                <img src="${imageUrl}" alt="${nft.collection.name} #${nft.tokenId}" 
+                     onerror="this.src='${nft.collection.image}'">
+            </div>
+            <div class="nft-info">
+                <div class="nft-name">${nft.collection.name} #${nft.tokenId}</div>
+            </div>
+        `;
+        card.onclick = () => showNftModal(nft.collection, nft.tokenId);
+        grid.appendChild(card);
+    }
+}
+
+function renderProfileListings(listings) {
+    const content = document.getElementById('profileContent');
+    
+    if (listings.length === 0) {
+        content.innerHTML = '<div class="empty-state"><p>No active listings</p></div>';
+        return;
+    }
+    
+    content.innerHTML = '<div class="profile-nfts-grid"></div>';
+    const grid = content.querySelector('.profile-nfts-grid');
+    
+    for (const listing of listings) {
+        const metadata = collectionMetadata[listing.collection.address]?.[listing.tokenId];
+        const imageUrl = metadata?.image ? ipfsToHttp(metadata.image) : listing.collection.image;
+        
+        const card = document.createElement('div');
+        card.className = 'nft-card';
+        card.innerHTML = `
+            <div class="nft-image-container">
+                <img src="${imageUrl}" alt="${listing.collection.name} #${listing.tokenId}"
+                     onerror="this.src='${listing.collection.image}'">
+            </div>
+            <div class="nft-info">
+                <div class="nft-name">${listing.collection.name} #${listing.tokenId}</div>
+                <div class="nft-price">${listing.priceText}</div>
+            </div>
+        `;
+        card.onclick = () => showNftModal(listing.collection, listing.tokenId);
+        grid.appendChild(card);
+    }
+}
+
+async function renderProfileActivity(address) {
+    const content = document.getElementById('profileContent');
+    content.innerHTML = '<div class="empty-state"><p>Loading activity...</p></div>';
+    
+    try {
+        const response = await fetch(`${INDEXER_URL}/user/${address}/activity`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const activities = await response.json();
+        
+        if (!activities || activities.length === 0) {
+            content.innerHTML = '<div class="empty-state"><p>No activity found</p></div>';
+            return;
+        }
+        
+        content.innerHTML = '<div class="profile-activity-list"></div>';
+        const list = content.querySelector('.profile-activity-list');
+        
+        for (const act of activities.slice(0, 50)) {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            
+            const typeLabels = {
+                'listed': '📋 Listed',
+                'sold': '💰 Sold',
+                'bought': '🛒 Bought',
+                'unlisted': '❌ Unlisted',
+                'staked': '🔒 Staked',
+                'unstaked': '🔓 Unstaked',
+                'offer_made': '💬 Offer Made',
+                'offer_accepted': '✅ Offer Accepted'
+            };
+            
+            const collection = COLLECTIONS.find(c => c.address.toLowerCase() === act.collection?.toLowerCase());
+            const colName = collection?.name || 'Unknown';
+            
+            item.innerHTML = `
+                <span class="activity-type">${typeLabels[act.event_type] || act.event_type}</span>
+                <span class="activity-item-name">${colName} #${act.token_id || '?'}</span>
+                <span class="activity-price">${act.price_sgb > 0 ? parseFloat(act.price_sgb).toFixed(2) + ' SGB' : ''}</span>
+                <span class="activity-time">${formatTimeAgo(act.timestamp * 1000)}</span>
+            `;
+            list.appendChild(item);
+        }
+    } catch (err) {
+        content.innerHTML = '<div class="empty-state"><p>Could not load activity</p></div>';
+    }
+}
+
+// Helper to make addresses clickable
+function makeAddressLink(address, short = true) {
+    const display = short ? `${address.slice(0, 6)}...${address.slice(-4)}` : address;
+    return `<a href="#user/${address.toLowerCase()}" class="address-link">${display}</a>`;
+}
+
 async function loadCollectionNfts(collection, append = false) {
     const grid = document.getElementById('collectionNftsGrid');
     const metadata = collectionMetadata[collection.address];
@@ -2354,7 +2642,7 @@ async function loadStakersLeaderboard(body) {
         <div class="lb-row">
             <span class="lb-rank">${i + 1}</span>
             <span class="lb-address">
-                <a href="https://songbird-explorer.flare.network/address/${s.address}" target="_blank">
+                <a href="#user/${s.address.toLowerCase()}">
                     ${s.address.slice(0, 6)}...${s.address.slice(-4)}
                 </a>
             </span>
@@ -2410,7 +2698,7 @@ async function loadTradersLeaderboard(body) {
         <div class="lb-row">
             <span class="lb-rank">${i + 1}</span>
             <span class="lb-address">
-                <a href="https://songbird-explorer.flare.network/address/${t.address}" target="_blank">
+                <a href="#user/${t.address.toLowerCase()}">
                     ${t.address.slice(0, 6)}...${t.address.slice(-4)}
                 </a>
             </span>
@@ -2445,7 +2733,7 @@ async function loadLpLeaderboard(body) {
         <div class="lb-row">
             <span class="lb-rank">${i + 1}</span>
             <span class="lb-address">
-                <a href="https://songbird-explorer.flare.network/address/${lp.address}" target="_blank">
+                <a href="#user/${lp.address.toLowerCase()}">
                     ${lp.address.slice(0, 6)}...${lp.address.slice(-4)}
                 </a>
             </span>
