@@ -275,7 +275,8 @@ const COLLECTIONS = [
     image: 'https://ipfs.io/ipfs/QmU8o16h3VgBzmMMTiUN9oN1yTwsduJu2vKLPoRMLore4o/1790.jpg',
     baseUri: 'https://ipfs.io/ipfs/QmU8o16h3VgBzmMMTiUN9oN1yTwsduJu2vKLPoRMLore4o/',
     featured: false,
-    imageExt: '.jpg'
+    imageExt: '.jpg',
+    jsonFile: '0x2d086e61267a57503dd4aa1bb4e807bc50fa7ee1.json'
 }
 ];
 
