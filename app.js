@@ -81,7 +81,19 @@ async function checkForNewOffers() {
 
 function handleHashRoute() {
     const hash = window.location.hash.slice(1); // Remove #
-    const validTabs = ['collections', 'my-nfts', 'staking', 'lp', 'governance'];
+    const validTabs = ['collections', 'my-nfts', 'staking', 'lp', 'leaderboard', 'governance'];
+    
+    // Handle collection routes: #collection/0x123...
+    if (hash.startsWith('collection/')) {
+        const address = hash.split('/')[1];
+        const collection = COLLECTIONS.find(c => c.address.toLowerCase() === address.toLowerCase());
+        if (collection) {
+            switchTab('collections', false);
+            setTimeout(() => openCollectionView(collection), 100);
+            return;
+        }
+    }
+    
     if (hash && validTabs.includes(hash)) {
         switchTab(hash, false); // false = don't update hash again
     }
@@ -990,6 +1002,9 @@ function openCollectionView(collection) {
     collectionViewMode = 'all';
     isLoadingMore = false;
     
+    // Update URL hash
+    history.pushState(null, '', `#collection/${collection.address.toLowerCase()}`);
+    
     const grid = document.getElementById('collectionsGrid');
     grid.style.display = 'block';
     
@@ -1081,6 +1096,7 @@ async function jumpToTokenId() {
 function closeCollectionView() {
     if (collectionObserver) collectionObserver.disconnect();
     currentCollectionView = null;
+    history.pushState(null, '', '#collections');
     loadCollections();
 }
 
