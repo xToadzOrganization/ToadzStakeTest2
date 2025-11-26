@@ -1836,14 +1836,14 @@ body {
 /* ==================== RARITY BADGE ==================== */
 .rarity-badge {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 700;
+    top: 0;
+    left: 0;
+    padding: 2px 20px 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
     color: #000;
     z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 80% 100%, 0 100%);
 }
 
 /* ==================== MODAL TRAITS ==================== */
