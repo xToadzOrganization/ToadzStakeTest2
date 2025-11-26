@@ -2202,12 +2202,18 @@ async function loadStakersLeaderboard(body) {
         );
         const rewards = await Promise.all(rewardPromises);
         
-        // Attach rewards to stakers
+        // Attach pending + claimed to get total earned
         stakers.forEach((s, i) => {
-            s.pondEarned = parseFloat(ethers.utils.formatEther(rewards[i]));
+            const pending = parseFloat(ethers.utils.formatEther(rewards[i]));
+            const claimed = s.pondClaimed || 0;
+            s.totalPond = pending + claimed;
         });
     } catch (err) {
         console.error('Failed to fetch pending rewards:', err);
+        // Still show claimed even if pending fails
+        stakers.forEach(s => {
+            s.totalPond = s.pondClaimed || 0;
+        });
     }
     
     body.innerHTML = stakers.map((s, i) => `
@@ -2219,7 +2225,7 @@ async function loadStakersLeaderboard(body) {
                 </a>
             </span>
             <span class="lb-value">${s.count || s.nftsStaked || 0}</span>
-            <span class="lb-value">${formatNumber(s.pondEarned || 0)} POND</span>
+            <span class="lb-value">${formatNumber(s.totalPond || 0)} POND</span>
         </div>
     `).join('');
 }
