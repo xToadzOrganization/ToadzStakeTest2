@@ -733,9 +733,9 @@ async function loadUserNfts() {
             // Preview thumbnails (first 5)
             const previewCount = Math.min(5, group.nfts.length);
             const previewHtml = group.nfts.slice(0, previewCount).map(nft => {
-                const imgUrl = nft.collection.thumbnailUri 
-                    ? nft.collection.thumbnailUri + nft.tokenId + (nft.collection.imageExt || '.png')
-                    : nft.collection.image;
+                const baseUrl = nft.collection.thumbnailUri || nft.collection.baseUri || '';
+                const ext = nft.collection.imageExt || '.png';
+                const imgUrl = baseUrl ? baseUrl + nft.tokenId + ext : nft.collection.image;
                 return `<div class="preview-thumb"><img src="${imgUrl}" onerror="this.parentElement.style.background='#252540'"></div>`;
             }).join('');
             const remainingCount = group.nfts.length - previewCount;
