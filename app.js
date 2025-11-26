@@ -38,7 +38,8 @@ async function init() {
     updateNotificationBadge(0);
     
     // Check if already connected
-    if (window.ethereum && window.ethereum.selectedAddress) {
+    const ethereum = window.ethereum || window.bifrost;
+    if (ethereum && ethereum.selectedAddress) {
         await connectWallet();
     }
 }
@@ -264,8 +265,22 @@ function setupEventListeners() {
 
 // ==================== WALLET ====================
 async function connectWallet() {
-    if (!window.ethereum) {
-        showToast('Please install MetaMask', 'error');
+    // Check for any injected wallet (MetaMask, Bifrost, etc.)
+    const ethereum = window.ethereum || window.bifrost;
+    
+    if (!ethereum) {
+        // On mobile, offer to open in Bifrost wallet browser
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+            const currentUrl = encodeURIComponent(window.location.href);
+            const bifrostLink = `https://bifrostwallet.com/wc?uri=${currentUrl}`;
+            
+            if (confirm('No wallet detected. Open in Bifrost Wallet?')) {
+                window.location.href = bifrostLink;
+            }
+        } else {
+            showToast('Please install MetaMask or Bifrost Wallet', 'error');
+        }
         return;
     }
     
@@ -274,17 +289,17 @@ async function connectWallet() {
         btn.textContent = 'Connecting...';
         
         // Request accounts
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         userAddress = accounts[0];
         
         // Check network
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        const chainId = await ethereum.request({ method: 'eth_chainId' });
         if (parseInt(chainId, 16) !== SONGBIRD_CHAIN_ID) {
             await switchToSongbird();
         }
         
         // Setup provider
-        provider = new ethers.providers.Web3Provider(window.ethereum);
+        provider = new ethers.providers.Web3Provider(ethereum);
         signer = provider.getSigner();
         isConnected = true;
         
@@ -307,8 +322,8 @@ async function connectWallet() {
         setInterval(checkForNewOffers, 30000);
         
         // Listen for account changes
-        window.ethereum.on('accountsChanged', handleAccountChange);
-        window.ethereum.on('chainChanged', () => window.location.reload());
+        ethereum.on('accountsChanged', handleAccountChange);
+        ethereum.on('chainChanged', () => window.location.reload());
         
         showToast('Wallet connected');
         
@@ -320,14 +335,15 @@ async function connectWallet() {
 }
 
 async function switchToSongbird() {
+    const ethereum = window.ethereum || window.bifrost;
     try {
-        await window.ethereum.request({
+        await ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: '0x13' }]
         });
     } catch (err) {
         if (err.code === 4902) {
-            await window.ethereum.request({
+            await ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
                     chainId: '0x13',
