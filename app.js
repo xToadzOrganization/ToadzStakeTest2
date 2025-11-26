@@ -730,29 +730,51 @@ async function loadUserNfts() {
             const section = document.createElement('div');
             section.className = 'nft-collection-section';
             
+            // Preview thumbnails (first 5)
+            const previewCount = Math.min(5, group.nfts.length);
+            const previewHtml = group.nfts.slice(0, previewCount).map(nft => {
+                const imgUrl = nft.collection.thumbnailUri 
+                    ? nft.collection.thumbnailUri + nft.tokenId + (nft.collection.imageExt || '.png')
+                    : nft.collection.image;
+                return `<div class="preview-thumb"><img src="${imgUrl}" onerror="this.parentElement.style.background='#252540'"></div>`;
+            }).join('');
+            const remainingCount = group.nfts.length - previewCount;
+            const remainingHtml = remainingCount > 0 ? `<div class="preview-more">+${remainingCount}</div>` : '';
+            
             const header = document.createElement('div');
             header.className = 'nft-collection-header';
             header.innerHTML = `
-                <img src="${group.collection.image}" alt="${group.collection.name}" onerror="this.style.display='none'">
-                <span class="collection-name">${group.collection.name}</span>
-                <span class="collection-count">${group.nfts.length}</span>
-                <span class="collapse-icon">▼</span>
+                <div class="collection-header-top">
+                    <div class="collection-header-left">
+                        <img src="${group.collection.image}" alt="${group.collection.name}" onerror="this.style.display='none'">
+                        <div class="collection-header-text">
+                            <span class="collection-name">${group.collection.name}</span>
+                            <span class="collection-count-text">${group.nfts.length} NFTs</span>
+                        </div>
+                    </div>
+                    <span class="collapse-icon">+</span>
+                </div>
+                <div class="collection-preview">${previewHtml}${remainingHtml}</div>
             `;
             header.onclick = () => {
                 const content = section.querySelector('.nft-collection-content');
                 const icon = header.querySelector('.collapse-icon');
+                const preview = header.querySelector('.collection-preview');
                 if (content.style.display === 'none') {
                     content.style.display = 'grid';
-                    icon.textContent = '▼';
+                    icon.textContent = '−';
+                    preview.style.display = 'none';
                 } else {
                     content.style.display = 'none';
-                    icon.textContent = '▶';
+                    icon.textContent = '+';
+                    preview.style.display = 'flex';
                 }
             };
             section.appendChild(header);
             
             const content = document.createElement('div');
             content.className = 'nft-collection-content';
+            content.style.display = 'none'; // Collapsed by default
             for (const nft of group.nfts) {
                 content.appendChild(createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed));
             }
@@ -770,6 +792,15 @@ async function loadUserNfts() {
 
 async function loadWalletNfts() {
     const results = [];
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'loadingStatus';
+    statusDiv.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;font-size:11px;color:#888;max-height:150px;overflow-y:auto;z-index:9999;';
+    document.body.appendChild(statusDiv);
+    
+    const updateStatus = (msg) => {
+        statusDiv.innerHTML += msg + '<br>';
+        statusDiv.scrollTop = statusDiv.scrollHeight;
+    };
     
     // Query all collections in parallel
     const collectionPromises = COLLECTIONS.map(async (col) => {
@@ -778,7 +809,7 @@ async function loadWalletNfts() {
         
         try {
             const balance = await contract.balanceOf(userAddress);
-            console.log(`${col.name}: balance = ${balance.toString()}`);
+            updateStatus(`${col.name}: balance = ${balance.toString()}`);
             if (balance.eq(0)) return nfts;
             
             // Try enumerable - parallel fetch all at once
@@ -791,6 +822,7 @@ async function loadWalletNfts() {
                 
                 // If more than 1, get the rest
                 if (balance.gt(1)) {
+                    updateStatus(`${col.name}: fetching ${balance.toNumber()} tokens...`);
                     const indices = Array.from({ length: balance.toNumber() - 1 }, (_, i) => i + 1);
                     const tokens = await Promise.all(
                         indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i))
@@ -801,9 +833,9 @@ async function loadWalletNfts() {
                         nfts.push({ collection: col, tokenId: id });
                     }
                 }
-                console.log(`${col.name}: found ${nfts.length} via enumerable`);
+                updateStatus(`${col.name}: ✓ found ${nfts.length} via enumerable`);
             } catch (enumErr) {
-                console.log(`${col.name}: not enumerable, using chunked transfer events`);
+                updateStatus(`${col.name}: not enumerable, scanning events...`);
                 // Not enumerable - use chunked transfer events
                 const currentBlock = await provider.getBlockNumber();
                 const chunkSize = 5000;
@@ -835,7 +867,7 @@ async function loadWalletNfts() {
                     logs.forEach(l => potentialTokens.add(parseInt(l.topics[3], 16)));
                 });
                 
-                console.log(`${col.name}: found ${potentialTokens.size} potential tokens from events`);
+                updateStatus(`${col.name}: found ${potentialTokens.size} potential tokens`);
                 
                 // Check ownership in parallel
                 const tokenArray = [...potentialTokens];
@@ -849,16 +881,20 @@ async function loadWalletNfts() {
                         nfts.push({ collection: col, tokenId });
                     }
                 });
-                console.log(`${col.name}: confirmed ${nfts.length} owned`);
+                updateStatus(`${col.name}: ✓ confirmed ${nfts.length} owned`);
             }
         } catch (err) {
-            console.error(`Error loading ${col.name}:`, err.message);
+            updateStatus(`${col.name}: ✗ ERROR - ${err.message}`);
         }
         
         return nfts;
     });
     
     const allResults = await Promise.all(collectionPromises);
+    
+    // Remove status after 10 seconds
+    setTimeout(() => statusDiv.remove(), 10000);
+    
     return allResults.flat();
 }
 
