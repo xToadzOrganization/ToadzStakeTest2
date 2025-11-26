@@ -12,7 +12,7 @@ const CONTRACTS = {
     pondPool: '0xBe942e51AB1617AFfe7E40F2f7bD4b022548e1Bd',
     
     // NFT Collections (stakeable for multipliers)
-    sToadz: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642',
+    sToadz: '0x35afb6ba51839dedd33140a3b704b39933d1e642',
     luxuryLofts: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8',
     songbirdCity: '0x360f8B7d9530F55AB8E52394E6527935635f51E7',
     
@@ -56,7 +56,7 @@ const COLLECTIONS = [
         thumbnailUri: 'https://ipfs.io/ipfs/QmP45Rfhy75RybFuLcwd1CR9vF6qznw95qQPxcA5TeBNYk/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x35afb6Ba51839dEDD33140A3b704b39933D1e642.json'
+        jsonFile: '0x35afb6ba51839dedd33140a3b704b39933d1e642.json'
     },
     {
         address: CONTRACTS.luxuryLofts,
