@@ -1158,6 +1158,11 @@ function openCollectionView(collection) {
     // Update URL hash
     history.pushState(null, '', `#collection/${collection.address.toLowerCase()}`);
     
+    // Hide main page elements (for mobile clarity)
+    document.querySelector('.featured-banner')?.classList.add('hide-in-detail');
+    document.querySelector('.filters')?.classList.add('hide-in-detail');
+    document.querySelector('.activity-feed')?.classList.add('hide-in-detail');
+    
     const grid = document.getElementById('collectionsGrid');
     grid.style.display = 'block';
     
@@ -1303,6 +1308,12 @@ async function jumpToTokenId() {
 function closeCollectionView() {
     if (collectionObserver) collectionObserver.disconnect();
     currentCollectionView = null;
+    
+    // Show main page elements again
+    document.querySelector('.featured-banner')?.classList.remove('hide-in-detail');
+    document.querySelector('.filters')?.classList.remove('hide-in-detail');
+    document.querySelector('.activity-feed')?.classList.remove('hide-in-detail');
+    
     history.pushState(null, '', '#collections');
     loadCollections();
 }
