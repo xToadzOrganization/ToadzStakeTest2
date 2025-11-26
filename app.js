@@ -713,6 +713,53 @@ async function loadUserNfts() {
     // Render
     if (allNfts.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No NFTs found</p></div>';
+    } else if (allNfts.length >= 50) {
+        // Group by collection
+        grid.innerHTML = '';
+        const grouped = {};
+        allNfts.forEach(nft => {
+            const addr = nft.collection.address;
+            if (!grouped[addr]) grouped[addr] = { collection: nft.collection, nfts: [] };
+            grouped[addr].nfts.push(nft);
+        });
+        
+        // Sort collections by NFT count descending
+        const sortedGroups = Object.values(grouped).sort((a, b) => b.nfts.length - a.nfts.length);
+        
+        for (const group of sortedGroups) {
+            const section = document.createElement('div');
+            section.className = 'nft-collection-section';
+            
+            const header = document.createElement('div');
+            header.className = 'nft-collection-header';
+            header.innerHTML = `
+                <img src="${group.collection.image}" alt="${group.collection.name}" onerror="this.style.display='none'">
+                <span class="collection-name">${group.collection.name}</span>
+                <span class="collection-count">${group.nfts.length}</span>
+                <span class="collapse-icon">▼</span>
+            `;
+            header.onclick = () => {
+                const content = section.querySelector('.nft-collection-content');
+                const icon = header.querySelector('.collapse-icon');
+                if (content.style.display === 'none') {
+                    content.style.display = 'grid';
+                    icon.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    icon.textContent = '▶';
+                }
+            };
+            section.appendChild(header);
+            
+            const content = document.createElement('div');
+            content.className = 'nft-collection-content';
+            for (const nft of group.nfts) {
+                content.appendChild(createNftCard(nft.collection, nft.tokenId, nft.isStaked, null, nft.isListed));
+            }
+            section.appendChild(content);
+            
+            grid.appendChild(section);
+        }
     } else {
         grid.innerHTML = '';
         for (const nft of allNfts) {
@@ -744,7 +791,7 @@ async function loadWalletNfts() {
                 
                 // If more than 1, get the rest
                 if (balance.gt(1)) {
-                    const indices = Array.from({ length: Math.min(balance.toNumber(), 100) - 1 }, (_, i) => i + 1);
+                    const indices = Array.from({ length: balance.toNumber() - 1 }, (_, i) => i + 1);
                     const tokens = await Promise.all(
                         indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i))
                     );
