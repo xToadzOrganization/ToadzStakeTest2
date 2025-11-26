@@ -802,9 +802,12 @@ async function loadWalletNfts() {
         statusDiv.scrollTop = statusDiv.scrollHeight;
     };
     
+    // Use direct RPC provider instead of wallet provider for more reliable reads
+    const readProvider = new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    
     // Query all collections in parallel
     const collectionPromises = COLLECTIONS.map(async (col) => {
-        const contract = new ethers.Contract(col.address, ERC721_ABI, provider);
+        const contract = new ethers.Contract(col.address, ERC721_ABI, readProvider);
         const nfts = [];
         
         try {
@@ -837,7 +840,7 @@ async function loadWalletNfts() {
             } catch (enumErr) {
                 updateStatus(`${col.name}: not enumerable, scanning events...`);
                 // Not enumerable - use chunked transfer events
-                const currentBlock = await provider.getBlockNumber();
+                const currentBlock = await readProvider.getBlockNumber();
                 const chunkSize = 5000;
                 const chunksToScan = 20;
                 const potentialTokens = new Set();
@@ -849,7 +852,7 @@ async function loadWalletNfts() {
                     if (startBlock <= 0) break;
                     
                     chunkPromises.push(
-                        provider.getLogs({
+                        readProvider.getLogs({
                             address: col.address,
                             topics: [
                                 ethers.utils.id('Transfer(address,address,uint256)'),
