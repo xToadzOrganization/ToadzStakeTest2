@@ -2803,16 +2803,8 @@ body {
     gap: 0.5rem;
 }
 
-.activity-item {
-    display: grid;
-    grid-template-columns: 120px 1fr 100px 80px;
-    padding: 1rem;
-    background: #1a1a2e;
-    border-radius: 8px;
-    align-items: center;
-    gap: 1rem;
-}
-
+.activity-item-name {
+    color: #fff;
 }
 
 .address-link {
@@ -2834,15 +2826,6 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-    
-    .activity-item {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-    }
-    
-    .activity-item-name {
-        grid-column: 1 / -1;
     }
 }
 
