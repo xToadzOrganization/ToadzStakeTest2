@@ -529,9 +529,11 @@ function createActivityItemFromIndexer(event) {
                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/></svg>'">
         </div>
         <div class="activity-info">
-            <div class="activity-type ${typeClass}">${typeLabel}</div>
-            <div class="activity-details">${collection.name} #${event.token_id}</div>
-            <div class="activity-price">${price}</div>
+            <div class="activity-left">
+                <div class="activity-type ${typeClass}">${typeLabel}</div>
+                <div class="activity-details">${collection.name} #${event.token_id}</div>
+                ${price ? `<div class="activity-price">${price}</div>` : ''}
+            </div>
             <div class="activity-time">${event.time_ago}</div>
         </div>
     `;
