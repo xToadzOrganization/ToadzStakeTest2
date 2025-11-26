@@ -88,6 +88,8 @@ function handleHashRoute() {
 }
 
 // ==================== LOAD METADATA ====================
+let collectionRarity = {}; // Store rarity scores per collection
+
 async function loadCollectionMetadata() {
     for (const col of COLLECTIONS) {
         if (col.jsonFile) {
@@ -106,6 +108,9 @@ async function loadCollectionMetadata() {
                     }
                     
                     collectionMetadata[col.address] = data;
+                    
+                    // Calculate rarity scores
+                    calculateRarity(col.address, data);
                 }
             } catch (err) {
                 console.log(`Could not load metadata for ${col.name}:`, err.message);
@@ -119,6 +124,82 @@ async function loadCollectionMetadata() {
             collectionMetadata[col.address] = obj;
         }
     }
+}
+
+// Calculate rarity scores for a collection
+function calculateRarity(collectionAddress, metadata) {
+    const tokenIds = Object.keys(metadata);
+    const totalSupply = tokenIds.length;
+    
+    if (totalSupply === 0) return;
+    
+    // Count trait occurrences
+    const traitCounts = {}; // { "trait_type:value": count }
+    
+    for (const tokenId of tokenIds) {
+        const nft = metadata[tokenId];
+        if (!nft.attributes) continue;
+        
+        for (const attr of nft.attributes) {
+            const key = `${attr.trait_type}:${attr.value}`;
+            traitCounts[key] = (traitCounts[key] || 0) + 1;
+        }
+    }
+    
+    // Calculate rarity score for each token
+    const rarityScores = {};
+    let maxScore = 0;
+    let minScore = Infinity;
+    
+    for (const tokenId of tokenIds) {
+        const nft = metadata[tokenId];
+        let score = 0;
+        
+        if (nft.attributes) {
+            for (const attr of nft.attributes) {
+                const key = `${attr.trait_type}:${attr.value}`;
+                const count = traitCounts[key];
+                const percentage = count / totalSupply;
+                // Rarity score = 1 / percentage (rarer = higher score)
+                score += 1 / percentage;
+            }
+        }
+        
+        rarityScores[tokenId] = score;
+        if (score > maxScore) maxScore = score;
+        if (score < minScore && score > 0) minScore = score;
+    }
+    
+    // Normalize scores to 1-100 and assign ranks
+    const sortedTokens = Object.entries(rarityScores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([tokenId], index) => ({ tokenId, rank: index + 1 }));
+    
+    const rankMap = {};
+    for (const { tokenId, rank } of sortedTokens) {
+        const rawScore = rarityScores[tokenId];
+        const normalizedScore = maxScore > minScore 
+            ? Math.round(((rawScore - minScore) / (maxScore - minScore)) * 99) + 1
+            : 50;
+        rankMap[tokenId] = { 
+            score: normalizedScore, 
+            rank,
+            rawScore: Math.round(rawScore * 100) / 100
+        };
+    }
+    
+    collectionRarity[collectionAddress] = rankMap;
+    console.log(`Calculated rarity for ${tokenIds.length} NFTs`);
+}
+
+// Get rarity tier based on rank percentage
+function getRarityTier(rank, totalSupply) {
+    const percentile = (rank / totalSupply) * 100;
+    if (percentile <= 1) return { tier: 'Legendary', color: '#ffd700' };
+    if (percentile <= 5) return { tier: 'Epic', color: '#a855f7' };
+    if (percentile <= 15) return { tier: 'Rare', color: '#3b82f6' };
+    if (percentile <= 35) return { tier: 'Uncommon', color: '#22c55e' };
+    return { tier: 'Common', color: '#888' };
 }
 
 // ==================== EVENT LISTENERS ====================
@@ -937,6 +1018,8 @@ function openCollectionView(collection) {
                 <select id="listingSortSelect" onchange="sortListings(this.value)">
                     <option value="price-asc">Price: Low to High</option>
                     <option value="price-desc">Price: High to Low</option>
+                    <option value="rarity-asc">Rarity: Common First</option>
+                    <option value="rarity-desc">Rarity: Rare First</option>
                     <option value="id-asc">ID: Low to High</option>
                     <option value="id-desc">ID: High to Low</option>
                 </select>
@@ -1061,6 +1144,7 @@ async function loadCollectionNfts(collection, append = false) {
     
     // Build token ID list based on sort
     let tokenIds = [];
+    const rarityData = collectionRarity[collection.address] || {};
     
     if (sortBy === 'price-asc' || sortBy === 'price-desc') {
         // Price sort: Listed items first (sorted by price), then unlisted by ID
@@ -1073,6 +1157,14 @@ async function loadCollectionNfts(collection, append = false) {
         const unlistedIds = allTokenIds.filter(id => !listedTokenIds.includes(id));
         
         tokenIds = [...listedIds, ...unlistedIds];
+    } else if (sortBy === 'rarity-asc' || sortBy === 'rarity-desc') {
+        // Rarity sort
+        const allTokenIds = Object.keys(metadata).map(id => parseInt(id));
+        tokenIds = allTokenIds.sort((a, b) => {
+            const rankA = rarityData[a]?.rank || Infinity;
+            const rankB = rarityData[b]?.rank || Infinity;
+            return sortBy === 'rarity-desc' ? rankA - rankB : rankB - rankA;
+        });
     } else {
         // ID sort
         const allTokenIds = Object.keys(metadata).map(id => parseInt(id));
@@ -1096,6 +1188,12 @@ async function loadCollectionNfts(collection, append = false) {
         const listing = listingData[tokenId];
         card.dataset.price = listing ? listing.sortPrice : 0;
         
+        // Get rarity info
+        const rarity = rarityData[tokenId];
+        const totalSupply = Object.keys(metadata).length;
+        const rarityTier = rarity ? getRarityTier(rarity.rank, totalSupply) : null;
+        const rarityBadge = rarityTier ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
+        
         let imageUrl = collection.thumbnailUri 
             ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
             : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + (collection.imageExt || '.png'));
@@ -1108,6 +1206,7 @@ async function loadCollectionNfts(collection, append = false) {
                 <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
                      onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
                 ${listedBadge}
+                ${rarityBadge}
             </div>
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
@@ -1192,6 +1291,13 @@ async function loadListedNfts(collection, grid) {
         const tokenId = listing.tokenId;
         const nftData = metadata[tokenId];
         
+        // Get rarity info
+        const rarityData = collectionRarity[collection.address] || {};
+        const rarity = rarityData[tokenId];
+        const totalSupply = Object.keys(metadata).length;
+        const rarityTier = rarity ? getRarityTier(rarity.rank, totalSupply) : null;
+        const rarityBadge = rarityTier ? `<div class="rarity-badge" style="background: ${rarityTier.color}">#${rarity.rank}</div>` : '';
+        
         let imageUrl = collection.thumbnailUri
             ? collection.thumbnailUri + tokenId + (collection.imageExt || '.png')
             : ipfsToHttp(nftData?.art || nftData?.image || collection.baseUri + tokenId + (collection.imageExt || '.png'));
@@ -1207,12 +1313,14 @@ async function loadListedNfts(collection, grid) {
         card.className = 'nft-card';
         card.dataset.tokenId = tokenId;
         card.dataset.price = listing.sortPrice;
+        card.dataset.rank = rarity?.rank || 9999999;
         
         card.innerHTML = `
             <div class="nft-image">
                 <img src="${imageUrl}" alt="${collection.name} #${tokenId}" loading="lazy"
                      onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2210%22>#${tokenId}</text></svg>'">
                 <div class="listed-badge">LISTED</div>
+                ${rarityBadge}
             </div>
             <div class="nft-info">
                 <div class="nft-name">${collection.name} #${tokenId}</div>
@@ -1312,11 +1420,39 @@ async function openNftModal(collection, tokenId, isStaked, imageUrl) {
     // Clear traits (would load from metadata)
     const traitsEl = document.getElementById('modalTraits');
     const metadata = collectionMetadata[collection.address];
-    if (metadata && metadata[tokenId] && metadata[tokenId].traits) {
-        traitsEl.innerHTML = `<div class="trait-item"><span>Traits</span><span>${metadata[tokenId].traits}</span></div>`;
-    } else {
-        traitsEl.innerHTML = '';
+    let traitsHtml = '';
+    
+    // Add rarity info
+    const rarityData = collectionRarity[collection.address];
+    if (rarityData && rarityData[tokenId]) {
+        const rarity = rarityData[tokenId];
+        const totalSupply = Object.keys(metadata || {}).length;
+        const rarityTier = getRarityTier(rarity.rank, totalSupply);
+        traitsHtml += `
+            <div class="trait-item rarity-trait">
+                <span class="trait-label">Rarity Rank</span>
+                <span class="trait-value" style="color: ${rarityTier.color}">#${rarity.rank} / ${totalSupply}</span>
+            </div>
+            <div class="trait-item rarity-trait">
+                <span class="trait-label">Tier</span>
+                <span class="trait-value" style="color: ${rarityTier.color}">${rarityTier.tier}</span>
+            </div>
+        `;
     }
+    
+    // Add attributes
+    if (metadata && metadata[tokenId] && metadata[tokenId].attributes) {
+        for (const attr of metadata[tokenId].attributes) {
+            traitsHtml += `
+                <div class="trait-item">
+                    <span class="trait-label">${attr.trait_type}</span>
+                    <span class="trait-value">${attr.value}</span>
+                </div>
+            `;
+        }
+    }
+    
+    traitsEl.innerHTML = traitsHtml || '<div class="empty-traits">No traits available</div>';
     
     const priceEl = document.getElementById('modalPrice');
     const actionsEl = document.getElementById('modalActions');
