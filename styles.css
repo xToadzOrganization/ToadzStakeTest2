@@ -2712,3 +2712,31 @@ body {
         grid-column: 1 / -1;
     }
 }
+
+/* ==================== COLLECTION STATS ==================== */
+.collection-detail-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.collection-detail-stats span {
+    background: #252540;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #ccc;
+}
+
+.collection-detail-stats span:first-child {
+    color: #00d4aa;
+}
+
+#collectionFloor {
+    color: #ffd700 !important;
+}
+
+#collectionVolume {
+    color: #00d4aa !important;
+}
