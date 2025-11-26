@@ -1486,7 +1486,7 @@ function renderProfileOwned(nfts) {
                 <div class="nft-name">${nft.collection.name} #${nft.tokenId}</div>
             </div>
         `;
-        card.onclick = () => showNftModal(nft.collection, nft.tokenId);
+        card.onclick = () => openNftModal(nft.collection, nft.tokenId, false, null);
         grid.appendChild(card);
     }
 }
@@ -1518,7 +1518,7 @@ function renderProfileListings(listings) {
                 <div class="nft-price">${listing.priceText}</div>
             </div>
         `;
-        card.onclick = () => showNftModal(listing.collection, listing.tokenId);
+        card.onclick = () => openNftModal(listing.collection, listing.tokenId, false, null);
         grid.appendChild(card);
     }
 }
