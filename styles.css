@@ -27,6 +27,38 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Hide scrollbar but keep functionality on mobile */
+@media (max-width: 768px) {
+    .activity-list::-webkit-scrollbar {
+        display: none;
+    }
+    .activity-list {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 }
 
 /* ==================== HEADER ==================== */
