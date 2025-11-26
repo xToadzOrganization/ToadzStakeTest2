@@ -173,6 +173,7 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmXwBAZs4pbiEeXU5HkKMEnxhWuTR5XdZt9afNsQ2cM9na/',
         featured: false,
         imageExt: '.jpg',
+        jsonFile: '0x2972ea6e6cc45c5837ce909def032dd325b48415.json'
     },
     {
         address: CONTRACTS.grumpyMonkeys,
