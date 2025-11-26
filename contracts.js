@@ -264,7 +264,8 @@ const COLLECTIONS = [
     description: 'Rare Pepe Club on Songbird.',
     image: 'https://ipfs.io/ipfs/QmPhiHC5eJScAAHMiboqkRe1nqo8KvfTQ3meM87yCqRQWx/5645.png',
     baseUri: 'https://ipfs.io/ipfs/QmPhiHC5eJScAAHMiboqkRe1nqo8KvfTQ3meM87yCqRQWx/',
-    featured: false
+    featured: false,
+    jsonFile: '0x7dc06ee0717c6f4905652f46f8f1891e8538e799.json'    
 },
 {
     address: CONTRACTS.sgbWhales,
