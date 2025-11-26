@@ -68,7 +68,8 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmZ42mWPA3xihoQxnm7ufKh51n5fhJe7hwfN7VPfy4cZcg/',
         featured: true,
         stakeable: true,
-        jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json'
+        jsonFile: '0x91Aa85a172DD3e7EEA4ad1A4B33E90cbF3B99ed8.json',
+        noRarity: true
     },
     {
         address: CONTRACTS.songbirdCity,
@@ -80,7 +81,8 @@ const COLLECTIONS = [
         baseUri: 'https://ipfs.io/ipfs/QmY5ZwdLP4z2PBXmRgh3djcDYzWvMuizyqfTDhPnXErgBm',
         featured: true,
         stakeable: true,
-        jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json'
+        jsonFile: '0x360f8B7d9530F55AB8E52394E6527935635f51E7.json',
+        noRarity: true
     },
     
     // === Fat Family ===
@@ -228,7 +230,8 @@ const COLLECTIONS = [
         image: 'https://ipfs.io/ipfs/QmWj1Gg6NJgXMiENprckUedqWvnkeQ79cDeaHzoTfHbwjX',
         baseUri: 'https://ipfs.io/ipfs/QmWj1Gg6NJgXMiENprckUedqWvnkeQ79cDeaHzoTfHbwjX',
         featured: false,
-        jsonFile: '0xff063937523c4514179a4d9a6769694baab357a8.json'
+        jsonFile: '0xff063937523c4514179a4d9a6769694baab357a8.json',
+        noRarity: true
     },
     {
         address: CONTRACTS.theGrungies,
