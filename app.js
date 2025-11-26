@@ -37,10 +37,17 @@ async function init() {
     // Initialize notification badge (hide when 0)
     updateNotificationBadge(0);
     
-    // Check if already connected
+    // Check if already connected - use eth_accounts for reliability
     const ethereum = window.ethereum || window.bifrost;
-    if (ethereum && ethereum.selectedAddress) {
-        await connectWallet();
+    if (ethereum) {
+        try {
+            const accounts = await ethereum.request({ method: 'eth_accounts' });
+            if (accounts && accounts.length > 0) {
+                await connectWallet();
+            }
+        } catch (e) {
+            console.log('Auto-connect check failed:', e.message);
+        }
     }
 }
 
