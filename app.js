@@ -269,15 +269,9 @@ async function connectWallet() {
     const ethereum = window.ethereum || window.bifrost;
     
     if (!ethereum) {
-        // On mobile, offer to open in Bifrost wallet browser
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
-            const currentUrl = encodeURIComponent(window.location.href);
-            const bifrostLink = `https://bifrostwallet.com/wc?uri=${currentUrl}`;
-            
-            if (confirm('No wallet detected. Open in Bifrost Wallet?')) {
-                window.location.href = bifrostLink;
-            }
+            showToast('Open this site in Bifrost Wallet\'s browser to connect', 'error');
         } else {
             showToast('Please install MetaMask or Bifrost Wallet', 'error');
         }
