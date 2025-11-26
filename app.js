@@ -791,19 +791,35 @@ async function loadUserNfts() {
 }
 
 async function loadWalletNfts() {
+    // Try indexer first (fast!)
+    try {
+        const response = await fetch(`${INDEXER_URL}/user/${userAddress}/nfts`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.total > 0) {
+                console.log(`Loaded ${data.total} NFTs from indexer`);
+                const nfts = [];
+                for (const group of data.collections) {
+                    const col = COLLECTIONS.find(c => c.address.toLowerCase() === group.collection.toLowerCase());
+                    if (col) {
+                        for (const tokenId of group.tokenIds) {
+                            userNfts[col.address].push(tokenId);
+                            nfts.push({ collection: col, tokenId });
+                        }
+                    }
+                }
+                return nfts;
+            }
+        }
+    } catch (err) {
+        console.log('Indexer unavailable, falling back to RPC:', err.message);
+    }
+    
+    // Fallback to RPC
     const results = [];
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'loadingStatus';
-    statusDiv.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;font-size:11px;color:#888;max-height:150px;overflow-y:auto;z-index:9999;';
-    document.body.appendChild(statusDiv);
     
-    const updateStatus = (msg) => {
-        statusDiv.innerHTML += msg + '<br>';
-        statusDiv.scrollTop = statusDiv.scrollHeight;
-    };
-    
-    // Use direct RPC provider instead of wallet provider for more reliable reads
-    const readProvider = new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    // Use wallet provider if available, fallback to RPC
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
     
     // Query all collections in parallel
     const collectionPromises = COLLECTIONS.map(async (col) => {
@@ -812,20 +828,17 @@ async function loadWalletNfts() {
         
         try {
             const balance = await contract.balanceOf(userAddress);
-            updateStatus(`${col.name}: balance = ${balance.toString()}`);
+            console.log(`${col.name}: balance = ${balance.toString()}`);
             if (balance.eq(0)) return nfts;
             
-            // Try enumerable - parallel fetch all at once
+            // Try enumerable first
             try {
-                // Test if enumerable is supported first
                 const testToken = await contract.tokenOfOwnerByIndex(userAddress, 0);
                 const firstId = testToken.toNumber();
                 userNfts[col.address].push(firstId);
                 nfts.push({ collection: col, tokenId: firstId });
                 
-                // If more than 1, get the rest
                 if (balance.gt(1)) {
-                    updateStatus(`${col.name}: fetching ${balance.toNumber()} tokens...`);
                     const indices = Array.from({ length: balance.toNumber() - 1 }, (_, i) => i + 1);
                     const tokens = await Promise.all(
                         indices.map(i => contract.tokenOfOwnerByIndex(userAddress, i))
@@ -836,68 +849,19 @@ async function loadWalletNfts() {
                         nfts.push({ collection: col, tokenId: id });
                     }
                 }
-                updateStatus(`${col.name}: ✓ found ${nfts.length} via enumerable`);
+                console.log(`${col.name}: ✓ found ${nfts.length} via enumerable`);
             } catch (enumErr) {
-                updateStatus(`${col.name}: not enumerable, scanning events...`);
-                // Not enumerable - use chunked transfer events
-                const currentBlock = await readProvider.getBlockNumber();
-                const chunkSize = 5000;
-                const chunksToScan = 20;
-                const potentialTokens = new Set();
-                
-                const chunkPromises = [];
-                for (let i = 0; i < chunksToScan; i++) {
-                    const endBlock = currentBlock - (i * chunkSize);
-                    const startBlock = Math.max(0, endBlock - chunkSize);
-                    if (startBlock <= 0) break;
-                    
-                    chunkPromises.push(
-                        readProvider.getLogs({
-                            address: col.address,
-                            topics: [
-                                ethers.utils.id('Transfer(address,address,uint256)'),
-                                null,
-                                ethers.utils.hexZeroPad(userAddress, 32)
-                            ],
-                            fromBlock: startBlock,
-                            toBlock: endBlock
-                        }).catch(() => [])
-                    );
-                }
-                
-                const chunkResults = await Promise.all(chunkPromises);
-                chunkResults.forEach(logs => {
-                    logs.forEach(l => potentialTokens.add(parseInt(l.topics[3], 16)));
-                });
-                
-                updateStatus(`${col.name}: found ${potentialTokens.size} potential tokens`);
-                
-                // Check ownership in parallel
-                const tokenArray = [...potentialTokens];
-                const owners = await Promise.all(
-                    tokenArray.map(id => contract.ownerOf(id).catch(() => null))
-                );
-                
-                tokenArray.forEach((tokenId, i) => {
-                    if (owners[i] && owners[i].toLowerCase() === userAddress.toLowerCase()) {
-                        userNfts[col.address].push(tokenId);
-                        nfts.push({ collection: col, tokenId });
-                    }
-                });
-                updateStatus(`${col.name}: ✓ confirmed ${nfts.length} owned`);
+                // Not enumerable - show message that indexer is needed
+                console.log(`${col.name}: not enumerable, waiting for indexer...`);
             }
         } catch (err) {
-            updateStatus(`${col.name}: ✗ ERROR - ${err.message}`);
+            console.error(`Error loading ${col.name}:`, err.message);
         }
         
         return nfts;
     });
     
     const allResults = await Promise.all(collectionPromises);
-    
-    // Remove status after 10 seconds
-    setTimeout(() => statusDiv.remove(), 10000);
-    
     return allResults.flat();
 }
 
@@ -2303,7 +2267,11 @@ async function stakeAllNfts() {
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         
-        for (const col of COLLECTIONS) {
+        // Only stake collections that are stakeable (sToadz, Lofts, SBCity)
+        const stakeableCollections = COLLECTIONS.filter(col => col.stakeable);
+        
+        let totalStaked = 0;
+        for (const col of stakeableCollections) {
             const tokens = userNfts[col.address] || [];
             if (tokens.length === 0) continue;
             
@@ -2321,9 +2289,15 @@ async function stakeAllNfts() {
             showToast(`Staking ${tokens.length} ${col.name}...`);
             const tx = await stakingContract.stakeBatch(col.address, tokens);
             await tx.wait();
+            totalStaked += tokens.length;
         }
         
-        showToast('All NFTs staked!');
+        if (totalStaked === 0) {
+            showToast('No stakeable NFTs found', 'error');
+            return;
+        }
+        
+        showToast(`${totalStaked} NFTs staked!`);
         await loadUserNfts();
         await loadStakedNfts();
         
