@@ -2263,14 +2263,14 @@ async function stakeAllNfts() {
     }
     
     try {
-        showToast('Staking all NFTs...');
-        
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
         
         // Only stake collections that are stakeable (sToadz, Lofts, SBCity)
         const stakeableCollections = COLLECTIONS.filter(col => col.stakeable);
         
         let totalStaked = 0;
+        const BATCH_SIZE = 50; // Contract max is 50
+        
         for (const col of stakeableCollections) {
             const tokens = userNfts[col.address] || [];
             if (tokens.length === 0) continue;
@@ -2285,11 +2285,17 @@ async function stakeAllNfts() {
                 await approveTx.wait();
             }
             
-            // Stake batch
-            showToast(`Staking ${tokens.length} ${col.name}...`);
-            const tx = await stakingContract.stakeBatch(col.address, tokens);
-            await tx.wait();
-            totalStaked += tokens.length;
+            // Stake in batches of 50
+            for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+                const batch = tokens.slice(i, i + BATCH_SIZE);
+                const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+                const totalBatches = Math.ceil(tokens.length / BATCH_SIZE);
+                
+                showToast(`Staking ${col.name} batch ${batchNum}/${totalBatches} (${batch.length} NFTs)...`);
+                const tx = await stakingContract.stakeBatch(col.address, batch);
+                await tx.wait();
+                totalStaked += batch.length;
+            }
         }
         
         if (totalStaked === 0) {
@@ -2316,18 +2322,43 @@ async function unstakeAllNfts() {
     }
     
     try {
-        showToast('Unstaking all NFTs...');
-        
         const btn = document.getElementById('unstakeAllBtn');
         const originalText = btn.textContent;
         btn.textContent = 'Unstaking...';
         btn.disabled = true;
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.unstakeAll();
-        await tx.wait();
+        const stakeableCollections = COLLECTIONS.filter(col => col.stakeable);
+        const BATCH_SIZE = 50;
         
-        showToast('All NFTs unstaked!');
+        let totalUnstaked = 0;
+        
+        for (const col of stakeableCollections) {
+            // Get staked tokens for this collection
+            const stakedTokens = await stakingContract.getStakedTokens(userAddress, col.address);
+            if (stakedTokens.length === 0) continue;
+            
+            const tokens = stakedTokens.map(t => t.toNumber());
+            
+            // Unstake in batches of 50
+            for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+                const batch = tokens.slice(i, i + BATCH_SIZE);
+                const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+                const totalBatches = Math.ceil(tokens.length / BATCH_SIZE);
+                
+                showToast(`Unstaking ${col.name} batch ${batchNum}/${totalBatches} (${batch.length} NFTs)...`);
+                const tx = await stakingContract.unstakeBatch(col.address, batch);
+                await tx.wait();
+                totalUnstaked += batch.length;
+            }
+        }
+        
+        if (totalUnstaked === 0) {
+            showToast('No staked NFTs found', 'error');
+        } else {
+            showToast(`${totalUnstaked} NFTs unstaked!`);
+        }
+        
         btn.textContent = originalText;
         btn.disabled = false;
         await loadUserNfts();
@@ -2523,6 +2554,12 @@ async function cancelListing(collectionAddress, tokenId) {
         const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, signer);
         const tx = await marketplace.unlist(collectionAddress, tokenId);
         await tx.wait();
+        
+        // Add NFT back to local cache since indexer may be stale
+        if (!userNfts[collectionAddress]) userNfts[collectionAddress] = [];
+        if (!userNfts[collectionAddress].includes(tokenId)) {
+            userNfts[collectionAddress].push(tokenId);
+        }
         
         showToast('Listing cancelled!');
         closeModal();
