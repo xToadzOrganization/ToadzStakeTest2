@@ -1158,6 +1158,9 @@ function openCollectionView(collection) {
                         <p>${collection.description}</p>
                         <div class="collection-detail-stats">
                             <span>${formatNumber(collection.supply)} items</span>
+                            <span id="collectionFloor">Floor: --</span>
+                            <span id="collectionVolume">Volume: --</span>
+                            <span id="collectionListed">Listed: --</span>
                             ${collection.stakeable ? '<span class="multiplier-badge">🔥 LP Boost Eligible</span>' : ''}
                         </div>
                     </div>
@@ -1188,6 +1191,7 @@ function openCollectionView(collection) {
     `;
     
     loadCollectionNfts(collection);
+    loadCollectionStats(collection);
     setupInfiniteScroll();
     
     document.getElementById('nftSearchInput').addEventListener('keypress', (e) => {
@@ -1206,6 +1210,53 @@ function setupInfiniteScroll() {
     
     const sentinel = document.getElementById('scrollSentinel');
     if (sentinel) collectionObserver.observe(sentinel);
+}
+
+async function loadCollectionStats(collection) {
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
+    
+    try {
+        // Get active listings
+        const activeTokenIds = await marketplace.getActiveListings(collection.address);
+        const listedCount = activeTokenIds.length;
+        
+        // Update listed count
+        const listedEl = document.getElementById('collectionListed');
+        if (listedEl) listedEl.textContent = `Listed: ${listedCount}`;
+        
+        // Find floor price from listings
+        let floorSGB = Infinity;
+        for (const tokenId of activeTokenIds.slice(0, 50)) { // Check first 50
+            try {
+                const [seller, priceSGB, pricePOND, active] = await marketplace.getListing(collection.address, tokenId);
+                if (active && priceSGB.gt(0)) {
+                    const price = parseFloat(ethers.utils.formatEther(priceSGB));
+                    if (price < floorSGB) floorSGB = price;
+                }
+            } catch {}
+        }
+        
+        const floorEl = document.getElementById('collectionFloor');
+        if (floorEl) {
+            floorEl.textContent = floorSGB === Infinity ? 'Floor: --' : `Floor: ${floorSGB.toFixed(2)} SGB`;
+        }
+        
+    } catch (err) {
+        console.log('Error loading collection stats:', err.message);
+    }
+    
+    // Get volume from indexer
+    try {
+        const response = await fetch(`${INDEXER_URL}/collection/${collection.address}/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            const volumeEl = document.getElementById('collectionVolume');
+            if (volumeEl) {
+                volumeEl.textContent = `Volume: ${formatNumber(stats.volumeSGB || 0)} SGB`;
+            }
+        }
+    } catch {}
 }
 
 function switchCollectionView(mode) {
