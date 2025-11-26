@@ -521,8 +521,12 @@ body {
     flex: 1;
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.activity-left {
+    min-width: 0;
 }
 
 .activity-type {
@@ -530,7 +534,7 @@ body {
     color: var(--text-muted);
     text-transform: uppercase;
     font-weight: 700;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     letter-spacing: 0.5px;
 }
 
@@ -551,9 +555,8 @@ body {
 }
 
 .activity-details {
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text-primary);
-    margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -564,6 +567,7 @@ body {
     font-size: 14px;
     font-weight: 700;
     color: var(--green-primary);
+    margin-top: 2px;
 }
 
 .activity-price:empty {
@@ -571,9 +575,10 @@ body {
 }
 
 .activity-time {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
-    margin-top: 2px;
+    flex-shrink: 0;
+    margin-left: 16px;
 }
 
 /* ==================== COLLECTION DETAIL VIEW ==================== */
@@ -1388,6 +1393,15 @@ body {
         height: 48px;
     }
     
+    .activity-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .activity-left {
+        width: 100%;
+    }
+    
     .activity-type {
         font-size: 11px;
         margin-bottom: 2px;
@@ -1395,7 +1409,6 @@ body {
     
     .activity-details {
         font-size: 13px;
-        margin-bottom: 4px;
     }
     
     .activity-price {
@@ -1404,7 +1417,8 @@ body {
     
     .activity-time {
         font-size: 11px;
-        margin-top: 2px;
+        margin-left: 0;
+        margin-top: 4px;
     }
     
     .collections-grid {
