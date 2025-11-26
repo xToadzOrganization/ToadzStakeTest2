@@ -2175,6 +2175,25 @@ async function loadStakersLeaderboard(body) {
         return;
     }
     
+    // Fetch pending rewards for each staker
+    try {
+        const readProvider = new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+        const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
+        
+        // Batch fetch pending rewards
+        const rewardPromises = stakers.map(s => 
+            stakingContract.pendingRewards(s.address).catch(() => ethers.BigNumber.from(0))
+        );
+        const rewards = await Promise.all(rewardPromises);
+        
+        // Attach rewards to stakers
+        stakers.forEach((s, i) => {
+            s.pondEarned = parseFloat(ethers.utils.formatEther(rewards[i]));
+        });
+    } catch (err) {
+        console.error('Failed to fetch pending rewards:', err);
+    }
+    
     body.innerHTML = stakers.map((s, i) => `
         <div class="lb-row">
             <span class="lb-rank">${i + 1}</span>
