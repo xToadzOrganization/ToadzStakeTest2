@@ -528,6 +528,9 @@ body {
 .activity-left {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .activity-type {
@@ -2810,23 +2813,6 @@ body {
     gap: 1rem;
 }
 
-.activity-type {
-    font-weight: 600;
-}
-
-.activity-item-name {
-    color: #fff;
-}
-
-.activity-price {
-    color: #00d4aa;
-    text-align: right;
-}
-
-.activity-time {
-    color: #888;
-    font-size: 0.8rem;
-    text-align: right;
 }
 
 .address-link {
