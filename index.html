@@ -431,55 +431,36 @@
                     <p>Provide liquidity, earn trading fees + POND rewards.</p>
                 </div>
                 
-                <div class="lp-stats">
-                    <div class="lp-stat-box">
-                        <span class="lp-stat-value" id="lpTvl">0 SGB</span>
-                        <span class="lp-stat-label">Total Value Locked</span>
+                <div class="lp-info-grid">
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="lpTvl">0 SGB</span>
+                        <span class="lp-info-label">Total Value Locked</span>
                     </div>
-                    <div class="lp-stat-box">
-                        <span class="lp-stat-value" id="lpApr">0%</span>
-                        <span class="lp-stat-label">APR</span>
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="lpApr">0%</span>
+                        <span class="lp-info-label">APR</span>
                     </div>
-                    <div class="lp-stat-box">
-                        <span class="lp-stat-value" id="myLpPosition">0 SGB</span>
-                        <span class="lp-stat-label">Your Position</span>
+                    <div class="lp-info-box">
+                        <span class="lp-info-value" id="myLpPosition">0 SGB</span>
+                        <span class="lp-info-label">Your Position</span>
                     </div>
                 </div>
 
-                <div class="lp-form">
-                    <div class="lp-tabs">
-                        <button class="lp-tab-btn active" data-action="deposit">Deposit</button>
-                        <button class="lp-tab-btn" data-action="withdraw">Withdraw</button>
-                    </div>
-                    
-                    <div class="lp-input-section" id="depositSection">
-                        <div class="lp-input-group">
-                            <label>Amount (SGB)</label>
-                            <input type="number" id="depositAmount" placeholder="0.00">
-                            <button class="max-btn" id="maxDepositBtn">MAX</button>
-                        </div>
-                        
-                        <div class="lock-options">
-                            <label>Lock Duration (Higher = More rewards)</label>
-                            <div class="lock-btns">
-                                <button class="lock-btn" data-days="0">No Lock</button>
-                                <button class="lock-btn" data-days="30">30 Days</button>
-                                <button class="lock-btn active" data-days="90">90 Days</button>
-                                <button class="lock-btn" data-days="180">180 Days</button>
-                            </div>
-                        </div>
-                        
-                        <button class="lp-submit-btn" id="depositBtn">Deposit</button>
-                    </div>
+                <div class="lp-cta">
+                    <a href="https://app.sparkdex.ai/liquidity" target="_blank" class="lp-link-btn">
+                        Add Liquidity on SparkDEX →
+                    </a>
+                </div>
 
-                    <div class="lp-input-section hidden" id="withdrawSection">
-                        <div class="lp-input-group">
-                            <label>Amount (SGB)</label>
-                            <input type="number" id="withdrawAmount" placeholder="0.00">
-                            <button class="max-btn" id="maxWithdrawBtn">MAX</button>
-                        </div>
-                        <button class="lp-submit-btn" id="withdrawBtn">Withdraw</button>
-                    </div>
+                <div class="lp-multiplier-info">
+                    <h3>Staking Multipliers</h3>
+                    <p>Stake NFTs to boost your LP rewards</p>
+                    <ul class="multiplier-list">
+                        <li><span class="mult-badge">1.25x</span> Stake 1+ sToadz</li>
+                        <li><span class="mult-badge">1.5x</span> Stake 5+ sToadz</li>
+                        <li><span class="mult-badge">2.0x</span> Stake 10+ sToadz</li>
+                        <li><span class="mult-badge">2.5x</span> Stake 25+ sToadz</li>
+                    </ul>
                 </div>
             </div>
         </div>
