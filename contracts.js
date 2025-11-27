@@ -34,6 +34,7 @@ const CONTRACTS = {
     theSenators: '0x927463265eDE6a52604D179d7110B7B2fc057a3f',
     rarePepeClub: '0x7DC06eE0717c6f4905652f46f8F1891E8538e799',
     sgbWhales: '0x2d086E61267A57503dd4aA1bB4E807bc50fa7Ee1',
+    pixelPlants: '0x3bE5Aa1Eccb73214481ee9eD9C74C9873070420a',
     
     // NFT Staking Contract
     nftStaking: '0xAC3E3651a4FA87784dee501a962aBD5005EebB64',
@@ -221,6 +222,17 @@ const COLLECTIONS = [
         featured: false,
         jsonFile: '0xf4b4d366f9b4855690bb7530abc76c857b259093.json'
     },
+    {
+    address: CONTRACTS.pixelPlants,
+    name: 'Pixel Plants',
+    symbol: 'PLANT',
+    supply: 1555,
+    description: 'Pixel Plants on Songbird.',
+    image: 'https://ipfs.io/ipfs/QmQ5iTcjb2pXaXvYt6SzMN2L7NowpNdKxdqo72Z2VUe46N/1.png',
+    baseUri: 'https://ipfs.io/ipfs/QmQ5iTcjb2pXaXvYt6SzMN2L7NowpNdKxdqo72Z2VUe46N/',
+    featured: false,
+    jsonFile: '0x3be5aa1eccb73214481ee9ed9c74c9873070420a.json'
+},
     {
         address: CONTRACTS.innerCircle888,
         name: '888 Inner Circle',
