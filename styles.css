@@ -782,6 +782,17 @@ body {
     gap: 16px;
 }
 
+.staked-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.staked-grid .nft-card {
+    max-width: 200px;
+}
+
 /* Collection sections for 50+ NFTs - Design B Card Stack */
 .nft-collection-section {
     grid-column: 1 / -1;
