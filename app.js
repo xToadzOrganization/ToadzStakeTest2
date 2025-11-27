@@ -720,6 +720,14 @@ async function loadUserNfts() {
         ...listedNfts.map(n => ({ ...n, isStaked: false, isListed: true }))
     ];
     
+    // Sort by collection then by tokenId
+    allNfts.sort((a, b) => {
+        if (a.collection.address !== b.collection.address) {
+            return a.collection.name.localeCompare(b.collection.name);
+        }
+        return a.tokenId - b.tokenId;
+    });
+    
     // Render
     if (allNfts.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No NFTs found</p></div>';
@@ -735,6 +743,11 @@ async function loadUserNfts() {
         
         // Sort collections by NFT count descending
         const sortedGroups = Object.values(grouped).sort((a, b) => b.nfts.length - a.nfts.length);
+        
+        // Sort NFTs within each group by tokenId
+        for (const group of sortedGroups) {
+            group.nfts.sort((a, b) => a.tokenId - b.tokenId);
+        }
         
         for (const group of sortedGroups) {
             const section = document.createElement('div');
