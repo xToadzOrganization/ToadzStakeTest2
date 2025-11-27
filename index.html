@@ -106,15 +106,23 @@
         }
         .btn-discord:hover { opacity: 0.9; }
 
+        .carousel-wrapper {
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
         .drop-carousel {
             display: flex;
             gap: 12px;
-            overflow-x: auto;
-            padding: 10px 0 40px 0;
+            padding: 10px 0;
+            animation: carouselScroll 25s linear infinite;
         }
-        .drop-carousel::-webkit-scrollbar { height: 6px; }
-        .drop-carousel::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 3px; }
-        .drop-carousel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        .drop-carousel:hover {
+            animation-play-state: paused;
+        }
+        @keyframes carouselScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
         .carousel-item {
             width: 90px;
             height: 90px;
@@ -563,7 +571,7 @@
                         <div class="drop-options">
                             <div class="drop-option free">
                                 <div class="label">FREE</div>
-                                <div class="value">Delegate 50k+ SGB</div>
+                                <div class="value">Stake 1+ sToadz</div>
                             </div>
                             <div class="drop-option paid">
                                 <div class="label">OR PAY</div>
@@ -578,17 +586,30 @@
                 </div>
 
                 <!-- Carousel -->
-                <div class="drop-carousel">
-                    <div class="carousel-item"><img src="images/foxgirls/1.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/2.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/3.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/4.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/5.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/6.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/7.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/8.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/9.png" alt=""></div>
-                    <div class="carousel-item"><img src="images/foxgirls/10.png" alt=""></div>
+                <div class="carousel-wrapper">
+                    <div class="drop-carousel">
+                        <div class="carousel-item"><img src="images/foxgirls/1.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/2.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/3.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/4.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/5.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/6.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/7.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/8.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/9.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/10.png" alt=""></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="carousel-item"><img src="images/foxgirls/1.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/2.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/3.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/4.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/5.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/6.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/7.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/8.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/9.png" alt=""></div>
+                        <div class="carousel-item"><img src="images/foxgirls/10.png" alt=""></div>
+                    </div>
                 </div>
 
                 <!-- Surprise Drops -->
@@ -619,7 +640,7 @@
                             <p>5,000 supply</p>
                         </div>
                         <div class="drop-item-price">
-                            <div class="free">FREE: 50k+ delegated</div>
+                            <div class="free">FREE: Stake 1+ sToadz</div>
                             <div class="paid">or 100 SGB</div>
                         </div>
                     </div>
@@ -634,7 +655,7 @@
                             <p>10,000 supply</p>
                         </div>
                         <div class="drop-item-price">
-                            <div class="free">FREE: Stake 1+ sToadz</div>
+                            <div class="free">FREE: 50k+ delegated</div>
                             <div class="paid">or 50 SGB</div>
                         </div>
                     </div>
