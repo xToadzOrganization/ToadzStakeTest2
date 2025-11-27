@@ -974,7 +974,7 @@ async function loadStakedNfts() {
         document.getElementById('stakingRewards').textContent = pendingPond.toFixed(4) + ' POND';
         
         // Load staked tokens for grid
-        const grid = document.getElementById('stakedNftsGrid');
+        const grid = document.getElementById('stakedGrid');
         grid.innerHTML = '';
         
         for (const col of COLLECTIONS) {
