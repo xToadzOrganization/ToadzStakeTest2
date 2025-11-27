@@ -1,9 +1,6 @@
 // ==================== CONFIG ====================
 const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
 
-// RPC - must use HTTPS for browser
-const SONGBIRD_RPC = 'https://songbird-api.flare.network/ext/C/rpc';
-
 // IPFS gateway for converting ipfs:// URLs
 function ipfsToHttp(url) {
     if (!url) return '';
