@@ -878,15 +878,17 @@ async function loadWalletNfts() {
 async function loadStakedNftsForUser() {
     if (CONTRACTS.nftStaking === '0x0000000000000000000000000000000000000000') return [];
     
-    const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, provider);
-    const results = [];
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, readProvider);
     
-    // Query all collections in parallel
-    const stakedPromises = COLLECTIONS.map(async (col) => {
+    // Query all stakeable collections in parallel
+    const stakeableCollections = COLLECTIONS.filter(col => col.stakeable);
+    const stakedPromises = stakeableCollections.map(async (col) => {
         try {
             const tokens = await stakingContract.getStakedTokens(userAddress, col.address);
             return tokens.map(t => ({ collection: col, tokenId: t.toNumber() }));
-        } catch {
+        } catch (err) {
+            console.log(`Error loading staked ${col.name}:`, err.message);
             return [];
         }
     });
@@ -898,7 +900,8 @@ async function loadStakedNftsForUser() {
 async function loadListedNftsForUser() {
     if (CONTRACTS.marketplace === '0x0000000000000000000000000000000000000000') return [];
     
-    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, readProvider);
     const results = [];
     
     try {
