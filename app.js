@@ -2300,7 +2300,10 @@ async function stakeAllNfts() {
         const BATCH_SIZE = 50; // Contract max is 50
         
         for (const col of stakeableCollections) {
-            const tokens = userNfts[col.address] || [];
+            const allTokens = userNfts[col.address] || [];
+            const alreadyStaked = stakedNfts[col.address] || [];
+            // Filter out already staked NFTs
+            const tokens = allTokens.filter(t => !alreadyStaked.includes(t));
             if (tokens.length === 0) continue;
             
             // Approve if needed
