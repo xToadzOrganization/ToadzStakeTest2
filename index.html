@@ -3,11 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toadz Marketplace | Where You Earn</title>
+    <title>ToadzStake | Get The Green</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Launchpad Styles */
+        .launchpad-container { max-width: 900px; margin: 0 auto; }
+        .launchpad-hero { text-align: center; margin-bottom: 50px; }
+        .launchpad-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,255,136,0.08);
+            border: 1px solid rgba(0,255,136,0.25);
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin-bottom: 30px;
+        }
+        .launchpad-badge-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88;
+            animation: launchpadPulse 2s infinite;
+        }
+        @keyframes launchpadPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .launchpad-badge span { color: #00ff88; font-size: 13px; font-weight: 600; }
+        .launchpad-hero h1 { font-size: 48px; font-weight: 700; margin-bottom: 15px; }
+        .launchpad-hero h1 .green { color: #00ff88; }
+        .launchpad-hero p { color: #666; font-size: 18px; }
+
+        .featured-drop {
+            background: linear-gradient(145deg, #12121a, #1a1a25);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(0,255,136,0.2);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+        .featured-drop-img {
+            width: 240px;
+            height: 240px;
+            border-radius: 20px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .featured-drop-img img { width: 100%; height: 100%; object-fit: cover; }
+        .featured-drop-info { flex: 1; }
+        .featured-drop-badge {
+            display: inline-block;
+            background: rgba(0,255,136,0.13);
+            color: #00ff88;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .featured-drop-info h2 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+        .featured-drop-info .subtitle { color: #888; margin-bottom: 25px; }
+        .drop-options { display: flex; gap: 12px; margin-bottom: 25px; }
+        .drop-option {
+            flex: 1;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .drop-option.free {
+            background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,255,136,0.03));
+            border: 1px solid rgba(0,255,136,0.25);
+        }
+        .drop-option.paid {
+            background: #0a0a0f;
+            border: 1px solid #333;
+        }
+        .drop-option .label { font-size: 12px; margin-bottom: 6px; }
+        .drop-option.free .label { color: #00ff88; }
+        .drop-option.paid .label { color: #888; }
+        .drop-option .value { font-weight: 700; font-size: 14px; }
+        .btn-discord {
+            display: block;
+            width: 100%;
+            background: #5865F2;
+            color: #fff;
+            border: none;
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 10px 40px rgba(88,101,242,0.3);
+        }
+        .btn-discord:hover { opacity: 0.9; }
+
+        .drop-carousel {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 10px 0 40px 0;
+        }
+        .drop-carousel::-webkit-scrollbar { height: 6px; }
+        .drop-carousel::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 3px; }
+        .drop-carousel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        .carousel-item {
+            width: 90px;
+            height: 90px;
+            border-radius: 14px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .carousel-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        .surprise-banner {
+            background: linear-gradient(90deg, rgba(139,92,246,0.12), rgba(236,72,153,0.12), rgba(245,151,0,0.12));
+            border: 1px dashed rgba(139,92,246,0.25);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .surprise-left { display: flex; align-items: center; gap: 15px; }
+        .surprise-left .emoji { font-size: 28px; }
+        .surprise-left p { font-weight: 600; margin-bottom: 2px; }
+        .surprise-left small { color: #888; font-size: 13px; }
+        .surprise-badge-box {
+            background: rgba(139,92,246,0.2);
+            color: #a78bfa;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .schedule-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        .schedule-list { display: flex; flex-direction: column; gap: 12px; }
+        .month-label { color: #666; font-size: 12px; margin-top: 20px; margin-bottom: 5px; }
+        .month-label:first-child { margin-top: 10px; }
+
+        .drop-item {
+            background: #12121a;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .drop-item.active {
+            background: linear-gradient(90deg, rgba(0,255,136,0.05), transparent);
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        .drop-item.exclusive {
+            background: linear-gradient(135deg, #1a1510, #12121a);
+            border: 1px solid rgba(245,151,0,0.2);
+        }
+        .drop-item-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .drop-item-img img { width: 100%; height: 100%; object-fit: cover; }
+        .drop-item-info { flex: 1; }
+        .drop-item-info h4 { font-weight: 600; margin-bottom: 4px; }
+        .drop-item-info p { color: #666; font-size: 13px; }
+        .drop-item-price { text-align: right; }
+        .drop-item-price .free { color: #00ff88; font-size: 12px; }
+        .drop-item-price .paid { color: #888; font-size: 12px; }
+        .exclusive-badge {
+            background: linear-gradient(135deg, #f59700, #eab308);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .genesis-reqs {
+            background: #0a0a0f;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            width: 100%;
+        }
+        .genesis-reqs .title { color: #f59e0b; font-size: 13px; margin-bottom: 12px; font-weight: 600; }
+        .genesis-reqs .reqs { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 12px; }
+        .genesis-reqs .reqs span { color: #888; font-size: 13px; }
+        .genesis-reqs .divider { border-top: 1px solid #333; padding-top: 12px; }
+        .genesis-reqs .divider span { color: #888; font-size: 13px; }
+
+        .launchpad-cta {
+            text-align: center;
+            margin-top: 50px;
+            padding: 40px;
+            background: linear-gradient(180deg, #12121a, transparent);
+            border-radius: 20px;
+        }
+        .launchpad-cta p { color: #666; margin-bottom: 15px; }
+        .btn-delegate {
+            display: inline-block;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 10px 40px rgba(0,255,136,0.3);
+        }
+        .btn-delegate:hover { opacity: 0.9; }
+
+        @media (max-width: 768px) {
+            .featured-drop { flex-direction: column; padding: 25px; gap: 25px; }
+            .featured-drop-img { width: 100%; height: 280px; }
+            .launchpad-hero h1 { font-size: 32px; }
+            .drop-item-img { width: 60px; height: 60px; }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -20,7 +248,7 @@
                 <button class="nav-btn" data-tab="staking">Staking</button>
                 <button class="nav-btn" data-tab="lp">LP</button>
                 <button class="nav-btn" data-tab="leaderboard">Leaderboard</button>
-                <button class="nav-btn" data-tab="governance">Governance</button>
+                <button class="nav-btn" data-tab="launchpad">Launchpad</button>
             </nav>
         </div>
         <div class="header-right">
@@ -174,13 +402,15 @@
 
             <div class="staking-actions">
                 <button class="stake-action-btn" id="unstakeAllBtn">Unstake All</button>
-                <button class="stake-action-btn primary" id="claimStakeRewardsBtn">Claim Rewards</button>
+                <button class="stake-action-btn primary" id="claimRewardsBtn">Claim Rewards</button>
             </div>
 
-            <h3 class="section-title">Your Staked NFTs</h3>
-            <div class="staked-nfts-grid" id="stakedNftsGrid">
-                <div class="empty-state">
-                    <p>No NFTs staked yet</p>
+            <div class="staked-nfts">
+                <h3>Your Staked NFTs</h3>
+                <div class="staked-grid" id="stakedGrid">
+                    <div class="empty-state">
+                        <p>No staked NFTs yet</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -189,51 +419,71 @@
         <div class="tab-content" id="tab-lp">
             <div class="lp-container">
                 <div class="lp-header">
-                    <h2>Universal Liquidity Pool</h2>
-                    <p>The engine powering the Toadz ecosystem. Deposit SGB + POND, earn from all platform activity.</p>
+                    <h2>Liquidity Pool</h2>
+                    <p>Provide liquidity, earn trading fees + POND rewards.</p>
                 </div>
                 
-                <div class="lp-info-grid">
-                    <div class="lp-info-box">
-                        <span class="lp-info-value" id="lpTvl">$0</span>
-                        <span class="lp-info-label">Total Value Locked</span>
+                <div class="lp-stats">
+                    <div class="lp-stat-box">
+                        <span class="lp-stat-value" id="lpTvl">0 SGB</span>
+                        <span class="lp-stat-label">Total Value Locked</span>
                     </div>
-                    <div class="lp-info-box">
-                        <span class="lp-info-value" id="lpApy">0%</span>
-                        <span class="lp-info-label">Est. APY</span>
+                    <div class="lp-stat-box">
+                        <span class="lp-stat-value" id="lpApr">0%</span>
+                        <span class="lp-stat-label">APR</span>
                     </div>
-                    <div class="lp-info-box">
-                        <span class="lp-info-value" id="lpYourShare">0%</span>
-                        <span class="lp-info-label">Your Share</span>
+                    <div class="lp-stat-box">
+                        <span class="lp-stat-value" id="myLpPosition">0 SGB</span>
+                        <span class="lp-stat-label">Your Position</span>
                     </div>
                 </div>
 
-                <div class="lp-cta">
-                    <a href="https://xtoadz.club" target="_blank" class="lp-link-btn">Manage LP Position →</a>
-                </div>
+                <div class="lp-form">
+                    <div class="lp-tabs">
+                        <button class="lp-tab-btn active" data-action="deposit">Deposit</button>
+                        <button class="lp-tab-btn" data-action="withdraw">Withdraw</button>
+                    </div>
+                    
+                    <div class="lp-input-section" id="depositSection">
+                        <div class="lp-input-group">
+                            <label>Amount (SGB)</label>
+                            <input type="number" id="depositAmount" placeholder="0.00">
+                            <button class="max-btn" id="maxDepositBtn">MAX</button>
+                        </div>
+                        
+                        <div class="lock-options">
+                            <label>Lock Duration (Higher = More rewards)</label>
+                            <div class="lock-btns">
+                                <button class="lock-btn" data-days="0">No Lock</button>
+                                <button class="lock-btn" data-days="30">30 Days</button>
+                                <button class="lock-btn active" data-days="90">90 Days</button>
+                                <button class="lock-btn" data-days="180">180 Days</button>
+                            </div>
+                        </div>
+                        
+                        <button class="lp-submit-btn" id="depositBtn">Deposit</button>
+                    </div>
 
-                <div class="lp-multiplier-info">
-                    <h3>LP Multipliers</h3>
-                    <p>Stake NFTs to boost your LP rewards:</p>
-                    <ul class="multiplier-list">
-                        <li><span class="mult-badge">+0.1%</span> per NFT staked (any collection)</li>
-                        <li><span class="mult-badge">Max +100%</span> bonus (1000 NFTs)</li>
-                        <li><span class="mult-badge">3.5x</span> maximum total multiplier</li>
-                    </ul>
-                    <p class="multiplier-note">Combined with time-lock bonuses (1x-2.5x), earn up to 3.5x rewards.</p>
+                    <div class="lp-input-section hidden" id="withdrawSection">
+                        <div class="lp-input-group">
+                            <label>Amount (SGB)</label>
+                            <input type="number" id="withdrawAmount" placeholder="0.00">
+                            <button class="max-btn" id="maxWithdrawBtn">MAX</button>
+                        </div>
+                        <button class="lp-submit-btn" id="withdrawBtn">Withdraw</button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Leaderboard Tab -->
         <div class="tab-content" id="tab-leaderboard">
-            <div class="leaderboard-container">
-                <div class="leaderboard-header">
+            <div class="lb-container">
+                <div class="lb-header">
                     <h2>Leaderboard</h2>
-                    <p>Top performers across the POND ecosystem</p>
                 </div>
                 
-                <div class="leaderboard-tabs">
+                <div class="lb-tabs">
                     <button class="lb-tab-btn active" data-lb="stakers">Top Stakers</button>
                     <button class="lb-tab-btn" data-lb="traders">Top Traders</button>
                     <button class="lb-tab-btn" data-lb="lp">Top LP</button>
@@ -286,41 +536,208 @@
             </div>
         </div>
 
-        <!-- Governance Tab -->
-        <div class="tab-content" id="tab-governance">
-            <div class="gov-container">
-                <div class="gov-header">
-                    <h2>Governance</h2>
-                    <p>LP holders and NFT stakers govern the protocol.</p>
+        <!-- Launchpad Tab -->
+        <div class="tab-content" id="tab-launchpad">
+            <div class="launchpad-container">
+
+                <!-- Hero -->
+                <div class="launchpad-hero">
+                    <div class="launchpad-badge">
+                        <div class="launchpad-badge-dot"></div>
+                        <span>LAUNCHING SOON</span>
+                    </div>
+                    <h1>Exclusive <span class="green">POND</span> Drops</h1>
+                    <p>Free for community members • Open to everyone</p>
                 </div>
-                
-                <div class="gov-power">
-                    <div class="gov-power-box">
-                        <span class="gov-power-value" id="govVotingPower">0</span>
-                        <span class="gov-power-label">Your Voting Power</span>
+
+                <!-- Featured Drop -->
+                <div class="featured-drop">
+                    <div class="featured-drop-img">
+                        <img src="images/foxgirls/1.png" alt="Fox Girls">
+                    </div>
+                    <div class="featured-drop-info">
+                        <div class="featured-drop-badge">FIRST DROP</div>
+                        <h2>Fox Girls</h2>
+                        <p class="subtitle">5,000 unique • Hand-crafted art • Stakeable</p>
+                        
+                        <div class="drop-options">
+                            <div class="drop-option free">
+                                <div class="label">FREE</div>
+                                <div class="value">Delegate 50k+ SGB</div>
+                            </div>
+                            <div class="drop-option paid">
+                                <div class="label">OR PAY</div>
+                                <div class="value">100 SGB</div>
+                            </div>
+                        </div>
+
+                        <a href="https://discord.gg/xtoadz" target="_blank" class="btn-discord">
+                            Join Discord for Updates
+                        </a>
                     </div>
                 </div>
 
-                <div class="gov-breakdown">
-                    <h3>Power Breakdown</h3>
-                    <div class="power-row">
-                        <span>LP Position</span>
-                        <span id="govLpPower">0</span>
-                    </div>
-                    <div class="power-row">
-                        <span>Staked NFTs</span>
-                        <span id="govNftPower">0</span>
-                    </div>
+                <!-- Carousel -->
+                <div class="drop-carousel">
+                    <div class="carousel-item"><img src="images/foxgirls/1.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/2.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/3.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/4.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/5.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/6.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/7.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/8.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/9.png" alt=""></div>
+                    <div class="carousel-item"><img src="images/foxgirls/10.png" alt=""></div>
                 </div>
 
-                <div class="proposals-section">
-                    <h3>Active Proposals</h3>
-                    <div class="proposals-list" id="proposalsList">
-                        <div class="empty-state">
-                            <p>No active proposals</p>
+                <!-- Surprise Drops -->
+                <div class="surprise-banner">
+                    <div class="surprise-left">
+                        <span class="emoji">🎲</span>
+                        <div>
+                            <p>Surprise Drops</p>
+                            <small>Unannounced drops can happen anytime. Stay ready.</small>
                         </div>
                     </div>
+                    <div class="surprise-badge-box">???</div>
                 </div>
+
+                <!-- Schedule -->
+                <h3 class="schedule-title">Drop Schedule</h3>
+                <div class="schedule-list">
+
+                    <div class="month-label">DECEMBER</div>
+
+                    <!-- Fox Girls -->
+                    <div class="drop-item active">
+                        <div class="drop-item-img">
+                            <img src="images/foxgirls/2.png" alt="Fox Girls">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Fox Girls</h4>
+                            <p>5,000 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">FREE: 50k+ delegated</div>
+                            <div class="paid">or 100 SGB</div>
+                        </div>
+                    </div>
+
+                    <!-- Geometric Toadz -->
+                    <div class="drop-item">
+                        <div class="drop-item-img">
+                            <img src="images/drops/geometric.png" alt="Geometric Toadz">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Geometric Toadz</h4>
+                            <p>10,000 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">FREE: Stake 1+ sToadz</div>
+                            <div class="paid">or 50 SGB</div>
+                        </div>
+                    </div>
+
+                    <div class="month-label">JANUARY</div>
+
+                    <!-- Neon Dreams -->
+                    <div class="drop-item">
+                        <div class="drop-item-img">
+                            <img src="images/drops/neon.png" alt="Neon Dreams">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Neon Dreams</h4>
+                            <p>3,333 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">FREE: Stake Loft or SBC</div>
+                            <div class="paid">or 75 SGB</div>
+                        </div>
+                    </div>
+
+                    <!-- Pixel Warriors -->
+                    <div class="drop-item">
+                        <div class="drop-item-img">
+                            <img src="images/drops/pixel.png" alt="Pixel Warriors">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Pixel Warriors</h4>
+                            <p>8,888 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">FREE: 5k+ SGB in Pool</div>
+                            <div class="paid">or 100 SGB</div>
+                        </div>
+                    </div>
+
+                    <div class="month-label">FEBRUARY</div>
+
+                    <!-- Cyber Punks -->
+                    <div class="drop-item">
+                        <div class="drop-item-img">
+                            <img src="images/drops/cyber.png" alt="Cyber Punks">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Cyber Punks</h4>
+                            <p>5,555 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">FREE: Hold 100k+ POND</div>
+                            <div class="paid">or 80 SGB</div>
+                        </div>
+                    </div>
+
+                    <!-- Astro Apes -->
+                    <div class="drop-item">
+                        <div class="drop-item-img">
+                            <img src="images/drops/apes.png" alt="Astro Apes">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Astro Apes</h4>
+                            <p>10,000 supply</p>
+                        </div>
+                        <div class="drop-item-price">
+                            <div class="free">400 SGB with POND</div>
+                            <div class="paid">or 500 SGB</div>
+                        </div>
+                    </div>
+
+                    <div class="month-label">MARCH+</div>
+
+                    <!-- Genesis -->
+                    <div class="drop-item exclusive" style="flex-wrap: wrap;">
+                        <div class="drop-item-img">
+                            <img src="images/drops/genesis.gif" alt="Genesis">
+                        </div>
+                        <div class="drop-item-info">
+                            <h4>Genesis Collection</h4>
+                            <p>1,000 ultra-rare</p>
+                        </div>
+                        <div class="exclusive-badge">EXCLUSIVE</div>
+                        <div class="genesis-reqs">
+                            <div class="title">FREE with ALL:</div>
+                            <div class="reqs">
+                                <span>✓ 5+ sToadz staked</span>
+                                <span>✓ 100k+ delegated</span>
+                                <span>✓ 10k+ in Pool</span>
+                            </div>
+                            <div class="divider">
+                                <span>or 2,000 SGB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Bottom CTA -->
+                <div class="launchpad-cta">
+                    <p>Get free drops by delegating to sToadz</p>
+                    <a href="https://portal.flare.network/" target="_blank" class="btn-delegate">
+                        Start Delegating →
+                    </a>
+                </div>
+
             </div>
         </div>
     </main>
