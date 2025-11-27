@@ -2292,6 +2292,9 @@ async function stakeAllNfts() {
     
     try {
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
+        const marketplace = new ethers.Contract(CONTRACTS.marketplace, MARKETPLACE_ABI, provider);
+        
+        showToast('Filtering available NFTs...', 'info');
         
         // Only stake collections that are stakeable (sToadz, Lofts, SBCity)
         const stakeableCollections = COLLECTIONS.filter(col => col.stakeable);
@@ -2302,8 +2305,23 @@ async function stakeAllNfts() {
         for (const col of stakeableCollections) {
             const allTokens = userNfts[col.address] || [];
             const alreadyStaked = stakedNfts[col.address] || [];
-            // Filter out already staked NFTs
-            const tokens = allTokens.filter(t => !alreadyStaked.includes(t));
+            
+            // Get listed NFTs from marketplace
+            let listedTokens = [];
+            try {
+                const activeListings = await marketplace.getActiveListings(col.address);
+                for (const tokenId of activeListings) {
+                    const [seller, , , active] = await marketplace.getListing(col.address, tokenId);
+                    if (active && seller.toLowerCase() === userAddress.toLowerCase()) {
+                        listedTokens.push(tokenId.toNumber ? tokenId.toNumber() : Number(tokenId));
+                    }
+                }
+            } catch (e) {
+                console.log('Could not fetch listings for', col.name);
+            }
+            
+            // Filter out already staked AND listed NFTs
+            const tokens = allTokens.filter(t => !alreadyStaked.includes(t) && !listedTokens.includes(t));
             if (tokens.length === 0) continue;
             
             // Approve if needed
