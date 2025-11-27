@@ -231,7 +231,8 @@ const COLLECTIONS = [
     image: 'https://ipfs.io/ipfs/QmQ5iTcjb2pXaXvYt6SzMN2L7NowpNdKxdqo72Z2VUe46N/1.png',
     baseUri: 'https://ipfs.io/ipfs/QmQ5iTcjb2pXaXvYt6SzMN2L7NowpNdKxdqo72Z2VUe46N/',
     featured: false,
-    jsonFile: '0x3be5aa1eccb73214481ee9ed9c74c9873070420a.json'
+    jsonFile: '0x3be5aa1eccb73214481ee9ed9c74c9873070420a.json',
+    noRarity: true
 },
     {
         address: CONTRACTS.innerCircle888,
