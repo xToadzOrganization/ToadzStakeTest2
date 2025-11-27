@@ -1,6 +1,11 @@
 // ==================== CONFIG ====================
 const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
 
+// RPC endpoints - private node primary, public fallback
+const PRIVATE_RPC = 'http://135.181.215.126:9650/ext/bc/C/rpc';
+const PUBLIC_RPC = 'https://songbird-api.flare.network/ext/C/rpc';
+const SONGBIRD_RPC = PRIVATE_RPC; // Use private node as default
+
 // IPFS gateway for converting ipfs:// URLs
 function ipfsToHttp(url) {
     if (!url) return '';
