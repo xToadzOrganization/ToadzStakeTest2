@@ -220,7 +220,7 @@ body {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
     padding: 8px 4px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 48px));
     z-index: 100;
 }
 
@@ -1466,7 +1466,7 @@ body {
     
     .main {
         padding: 16px;
-        padding-bottom: 140px;
+        padding-bottom: 160px;
     }
     
     .featured-banner {
