@@ -29,6 +29,7 @@ async function init() {
     await loadCollectionMetadata();
     await loadCollections();
     loadRecentActivity(); // Don't await - load in background
+    loadLpStats(); // Load LP stats (market cap, etc.)
     
     // Handle URL hash routing
     handleHashRoute();
@@ -267,7 +268,7 @@ function setupEventListeners() {
     // Staking actions
     document.getElementById('stakeAllBtn')?.addEventListener('click', stakeAllNfts);
     document.getElementById('unstakeAllBtn')?.addEventListener('click', unstakeAllNfts);
-    document.getElementById('claimStakeRewardsBtn')?.addEventListener('click', claimStakingRewards);
+    document.getElementById('claimRewardsBtn')?.addEventListener('click', claimStakingRewards);
 }
 
 // ==================== WALLET ====================
@@ -1017,6 +1018,79 @@ async function loadLpPosition() {
         
     } catch (err) {
         console.error('Load LP position failed:', err);
+    }
+}
+
+async function loadLpStats() {
+    const readProvider = provider || new ethers.providers.JsonRpcProvider(SONGBIRD_RPC);
+    
+    try {
+        // Get SGB price from CoinGecko
+        let sgbPriceUSD = 0.006; // fallback
+        try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=songbird&vs_currencies=usd');
+            const data = await response.json();
+            if (data.songbird?.usd) {
+                sgbPriceUSD = data.songbird.usd;
+            }
+        } catch (e) {
+            console.log('Using fallback SGB price');
+        }
+        
+        // Get pool reserves
+        const pool = new ethers.Contract(CONTRACTS.pondPool, PONDPOOL_ABI, readProvider);
+        const [reserveSGB, reservePOND] = await Promise.all([
+            pool.reserveSGB(),
+            pool.reservePOND()
+        ]);
+        
+        const sgbRes = parseFloat(ethers.utils.formatEther(reserveSGB));
+        const pondRes = parseFloat(ethers.utils.formatEther(reservePOND));
+        
+        // Calculate POND price and market cap
+        let marketCapUSD = 0;
+        let pondPriceUSD = 0;
+        const totalSupply = 11900000000; // 11.9B POND
+        
+        if (pondRes > 0 && sgbRes > 0) {
+            const pondPriceInSGB = sgbRes / pondRes;
+            pondPriceUSD = pondPriceInSGB * sgbPriceUSD;
+            marketCapUSD = pondPriceUSD * totalSupply;
+        }
+        
+        // Format market cap
+        let mcapText = '$0';
+        if (marketCapUSD >= 1000000) {
+            mcapText = '$' + (marketCapUSD / 1000000).toFixed(2) + 'M';
+        } else if (marketCapUSD >= 1000) {
+            mcapText = '$' + (marketCapUSD / 1000).toFixed(2) + 'K';
+        } else if (marketCapUSD > 0) {
+            mcapText = '$' + marketCapUSD.toFixed(2);
+        }
+        
+        // Update UI - change TVL to Market Cap
+        const tvlElement = document.getElementById('lpTvl');
+        const tvlLabel = tvlElement?.parentElement?.querySelector('.lp-info-label');
+        if (tvlElement) tvlElement.textContent = mcapText;
+        if (tvlLabel) tvlLabel.textContent = 'POND MARKET CAP';
+        
+        // Update APR to show pool liquidity instead
+        const aprElement = document.getElementById('lpApr');
+        const aprLabel = aprElement?.parentElement?.querySelector('.lp-info-label');
+        const poolLiquidity = sgbRes * 2; // Both sides roughly equal value
+        let liqText = '0 SGB';
+        if (poolLiquidity >= 1000000) {
+            liqText = (poolLiquidity / 1000000).toFixed(2) + 'M SGB';
+        } else if (poolLiquidity >= 1000) {
+            liqText = (poolLiquidity / 1000).toFixed(1) + 'K SGB';
+        } else if (poolLiquidity > 0) {
+            liqText = poolLiquidity.toFixed(0) + ' SGB';
+        }
+        if (aprElement) aprElement.textContent = liqText;
+        if (aprLabel) aprLabel.textContent = 'POOL LIQUIDITY';
+        
+    } catch (err) {
+        console.error('Load LP stats failed:', err);
     }
 }
 
@@ -2433,7 +2507,7 @@ async function claimStakingRewards() {
         return;
     }
     
-    const btn = document.getElementById('claimStakeRewardsBtn');
+    const btn = document.getElementById('claimRewardsBtn');
     const originalText = btn.textContent;
     
     try {
