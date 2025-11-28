@@ -250,6 +250,11 @@ body {
     flex-shrink: 0;
 }
 
+/* Android nav bar fix */
+.android-device .mobile-nav {
+    padding-bottom: 56px;
+}
+
 /* ==================== MAIN CONTENT ==================== */
 .main {
     max-width: 1400px;
@@ -1467,6 +1472,10 @@ body {
     .main {
         padding: 16px;
         padding-bottom: 160px;
+    }
+    
+    .android-device .main {
+        padding-bottom: 180px;
     }
     
     .featured-banner {
