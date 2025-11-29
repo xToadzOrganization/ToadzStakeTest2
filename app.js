@@ -1,5 +1,7 @@
 // ==================== CONFIG ====================
 const INDEXER_URL = 'https://toadz-indexer-production.up.railway.app';
+const STAKING_PAUSED = true;
+const STAKING_PAUSE_MSG = "🔧 Staking upgrades in progress! Check back soon.";
 
 // IPFS gateway for converting ipfs:// URLs
 function ipfsToHttp(url) {
@@ -2282,6 +2284,11 @@ function closeModal() {
 
 // ==================== STAKING ACTIONS ====================
 async function stakeNft(collectionAddress, tokenId) {
+    if (STAKING_PAUSED) {
+        alert(STAKING_PAUSE_MSG);
+        return;
+    }
+    
     if (!isConnected) {
         showToast('Connect wallet first', 'error');
         return;
@@ -2354,6 +2361,11 @@ async function unstakeNft(collectionAddress, tokenId) {
 }
 
 async function stakeAllNfts() {
+    if (STAKING_PAUSED) {
+        alert(STAKING_PAUSE_MSG);
+        return;
+    }
+    
     if (!isConnected) {
         showToast('Connect wallet first', 'error');
         return;
