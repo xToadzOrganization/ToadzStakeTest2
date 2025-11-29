@@ -2344,7 +2344,7 @@ async function unstakeNft(collectionAddress, tokenId) {
         actionsEl.innerHTML = `<button class="modal-btn primary" disabled>Unstaking...</button>`;
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.unstake(collectionAddress, tokenId, { gasLimit: 15000000 });
+        const tx = await stakingContract.unstake(collectionAddress, tokenId, { gasLimit: 30000000 });
         await tx.wait();
         
         showToast('NFT unstaked successfully!');
@@ -2483,7 +2483,7 @@ async function unstakeAllNfts() {
                 const totalBatches = Math.ceil(tokens.length / BATCH_SIZE);
                 
                 showToast(`Unstaking ${col.name} batch ${batchNum}/${totalBatches} (${batch.length} NFTs)...`);
-                const tx = await stakingContract.unstakeBatch(col.address, batch, { gasLimit: 15000000 });
+                const tx = await stakingContract.unstakeBatch(col.address, batch, { gasLimit: 30000000 });
                 await tx.wait();
                 totalUnstaked += batch.length;
             }
@@ -2527,7 +2527,7 @@ async function claimStakingRewards() {
         btn.disabled = true;
         
         const stakingContract = new ethers.Contract(CONTRACTS.nftStaking, NFT_STAKING_ABI, signer);
-        const tx = await stakingContract.claimRewards({ gasLimit: 15000000 });
+        const tx = await stakingContract.claimRewards({ gasLimit: 30000000 });
         await tx.wait();
         
         showToast('Rewards claimed!');
